@@ -9,14 +9,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "outDir": "./dist",
-    "rootDir": "./",
-    "baseUrl": "./",
-    "paths": {
-      "@pages/*": ["src/pages/*"],
-      "@models/*": ["src/models/*"],
-      "@config/*": ["src/config/*"],
-      "@utils/*": ["src/utils/*"]
-    }
+    "rootDir": "./"
   },
   "include": ["src/**/*", "tests/**/*", "playwright.config.ts"],
   "exclude": ["node_modules", "dist"]
