@@ -1,6 +1,6 @@
 # AI-Assisted QA Testing Course
 
-A learning repository for an AI-assisted QA testing course. It tracks coursework across two chapters and includes prompt engineering artifacts, reusable prompt templates, and two working test automation frameworks.
+A learning repository for an AI-assisted QA testing course. It tracks coursework across three chapters and includes prompt engineering artifacts, reusable prompt templates, and working test automation frameworks.
 
 ---
 
@@ -14,14 +14,128 @@ A learning repository for an AI-assisted QA testing course. It tracks coursework
 │   ├── templates/                  — Reusable RICE-POT prompt templates
 │   ├── Project1_TC_Gen/            — Test case generation project
 │   └── Project2_Selenium_Framework/— Selenium + TestNG framework (Salesforce)
+├── Chapter_03_BLAST_FW/            — B.L.A.S.T Framework chapter
+│   ├── B.L.A.S.T.md               — Framework protocol & phase definitions
+│   ├── LLM.md                      — Data schemas & behavioral rules
+│   ├── Objective.md                — Chapter objectives
+│   ├── findings.md                 — Research & findings log
+│   ├── progress.md                 — Progress tracking
+│   ├── task_plan.md                — Implementation task plan
+│   └── jira-test-plan-generator/  — React + Vite app (Jira → AI test plan)
 ├── Project_Assignment/             — Assignment deliverables
 │   ├── Problem.md
 │   ├── SKILL.md
 │   ├── RICE-POT-RestAPI-Playwright-Prompt.md
-│   └── RestfulFramework/           — RESTful API automation framework (Playwright)
+│   ├── RestfulFramework/           — RESTful API automation framework (Playwright)
+│   └── B.L.A.S.T_Framework/       — B.L.A.S.T Test Plan Generator (deployed to Vercel)
 ├── VWO_Login_Dashboard_Test_Plan.md
 └── RESTFUL_TEST_PLAN.md
 ```
+
+---
+
+## Chapter 3 — B.L.A.S.T Framework
+
+**Location:** `Chapter_03_BLAST_FW/`
+
+### The B.L.A.S.T Methodology
+
+A 5-phase AI-assisted development framework for building structured, traceable test artifacts:
+
+| Phase | Name | Purpose |
+|-------|------|---------|
+| **B** | Blueprint | Define data schemas, behavioral rules, and architectural invariants |
+| **L** | Link | Connect Jira issues / requirements to the test plan generator |
+| **A** | Architect | Design the React component tree, API proxy layer, and LLM prompt structure |
+| **S** | Stylize | Apply Tailwind CSS dark/light mode, glassmorphism, and responsive layout |
+| **T** | Trigger | Wire up user interactions — fetch Jira issue → generate test plan via GROQ LLM |
+
+### Jira Test Plan Generator (React + Vite)
+
+**Location:** `Chapter_03_BLAST_FW/jira-test-plan-generator/`
+
+A React application that fetches a Jira issue and generates a structured B.L.A.S.T test plan using GROQ LLM.
+
+**Stack:** React 18, Vite, Tailwind CSS, GROQ API (`llama-3.3-70b-versatile`)
+
+```bash
+cd Chapter_03_BLAST_FW/jira-test-plan-generator
+npm install
+
+# Run dev server + proxy together
+npm run dev
+
+# Build for production
+npm run build
+```
+
+---
+
+## Project Assignment — B.L.A.S.T Test Plan Generator (Deployed)
+
+**Location:** `Project_Assignment/B.L.A.S.T_Framework/`
+
+**Live URL:** [https://blastast.vercel.app](https://blastast.vercel.app)
+
+A production-ready web application deployed to Vercel that generates structured QA test plans from Jira issues using GROQ LLM. No build step — React via CDN, Tailwind via CDN.
+
+### Features
+
+- **Jira Integration** — paste any Jira Issue ID (e.g. `SCRUM-6`); the app fetches summary, description, priority, status, type, and assignee via Jira REST API v3
+- **B.L.A.S.T Test Plan Generation** — GROQ LLM produces a structured plan with test objectives, risk areas, test scenarios, acceptance criteria, and automation recommendations
+- **E-Commerce Test Case Generator** — RICE-POT structured prompts across 10 modules (Auth, Product, Cart, Checkout, Payments, Search, Reviews, Orders, Performance, Security) and 9 test types
+- **Dark / Light Mode** — Tailwind `darkMode: 'class'` with anti-flicker script; preference saved in `localStorage`
+- **Glassmorphism UI** — sticky header, slide-in settings drawer, copy/download bar, shimmer loading, toast notifications
+- **Anti-hallucination protocol** — LLM only uses data from the Jira issue; inferences tagged `[INFERENCE]`, assumptions tagged `[ASSUMPTION]`
+
+### Architecture
+
+```
+B.L.A.S.T_Framework/
+├── public/
+│   └── index.html          ← Single-file React app (CDN React + Babel + Tailwind)
+├── api/
+│   ├── health.js           ← GET  /api/health   — env var status check
+│   ├── generate.js         ← POST /api/generate — proxies to GROQ LLM
+│   └── jira/
+│       └── [issueId].js    ← GET  /api/jira/:id — proxies to Jira REST API v3
+├── server.js               ← Express proxy server (local dev only, port 8787)
+├── vercel.json             ← Vercel rewrites + serverless function config
+├── package.json
+├── LLM.md                  ← B.L.A.S.T Protocol 0: data schemas & behavioral rules
+└── task_plan.md            ← Phase-by-phase implementation checklist
+```
+
+### Running Locally
+
+```bash
+cd Project_Assignment/B.L.A.S.T_Framework
+npm install
+
+# Start Express proxy + static server on http://localhost:8787
+npm start
+```
+
+### Vercel Serverless Functions
+
+| Route | Function | Purpose |
+|-------|----------|---------|
+| `GET /api/health` | `api/health.js` | Reports which env vars are loaded |
+| `GET /api/jira/:issueId` | `api/jira/[issueId].js` | Fetches Jira issue with Basic Auth |
+| `POST /api/generate` | `api/generate.js` | Calls GROQ LLM, returns Markdown test plan |
+
+### Environment Variables (Vercel)
+
+Set in Vercel project settings (not committed to git):
+
+| Variable | Purpose |
+|----------|---------|
+| `GROQ_KEY` | GROQ API key |
+| `JIRA_EMAIL` | Jira account email |
+| `JIRA_API_TOKEN` | Jira API token |
+| `JIRA_URL` | Jira base URL (e.g. `https://yourorg.atlassian.net`) |
+
+User settings entered in the app's Settings drawer override server env vars via query params / request body.
 
 ---
 
@@ -62,19 +176,11 @@ RestfulFramework/
     └── posts/posts.spec.ts     ← 12 test cases for /posts
 ```
 
-### Design Principles
-
-- **Two-page object model** — `UsersPage` and `PostsPage` each extend `BasePage`. Tests never call `request.get/post/put/delete` directly; they go through the page object. If an endpoint URL changes, it changes in one place only.
-- **Anti-hallucination (RICE-POT P rules)** — test data is fixed and deterministic; every assertion traces back to a documented endpoint/status code via `// Traces to:` comments.
-- **Schema validation** — `schemaValidator.ts` asserts required fields and types on every GET response.
-- **Traceability matrix** — a CSV matrix is embedded at the top of each spec file mapping every test to its endpoint, HTTP method, status code, and priority.
-
 ### Setup and Run
 
 ```bash
 cd Project_Assignment/RestfulFramework
 
-# Install dependencies
 npm install
 
 # Run all 24 tests
@@ -121,15 +227,6 @@ npm run typecheck
 | TC-P-010 | /posts/:id | DELETE | Functional | Delete existing returns 200 |
 | TC-P-011 | /posts/:id | DELETE | Functional | Delete non-existent returns 404 |
 | TC-P-012 | /posts/:id | GET | Non-Functional | Content-Type header present |
-
-### Environment Variables
-
-Copy `.env.example` to `.env` before running:
-
-```bash
-BASE_URL=https://jsonplaceholder.typicode.com
-AUTH_TOKEN=          # leave empty for open APIs
-```
 
 ---
 

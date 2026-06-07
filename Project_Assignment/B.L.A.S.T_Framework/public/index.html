@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>B.L.A.S.T — Test Plan Generator</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Anti-flicker: apply saved theme before any paint -->
+  <script>
+    (function () {
+      if (localStorage.getItem('blast-theme') !== 'light') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            blast: {
+              50:  '#f5f3ff',
+              100: '#ede9fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Marked (markdown → HTML) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* ── Custom CSS ─────────────────────────────────────────── */
+    :root {
+      --grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #3b82f6 100%);
+      --grad-text: linear-gradient(90deg, #a78bfa, #6366f1, #60a5fa);
+    }
+
+    * { box-sizing: border-box; }
+
+    body { font-family: 'Inter', sans-serif; margin: 0; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #6366f144; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6366f188; }
+
+    /* Gradient text */
+    .grad-text {
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Glass card */
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(99, 102, 241, 0.18);
+    }
+    .glass-light {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    /* Glow focus */
+    .glow-focus:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Animated gradient border on generate btn */
+    @keyframes border-spin {
+      from { --border-angle: 0turn; }
+      to   { --border-angle: 1turn; }
+    }
+    .btn-generate {
+      background: var(--grad);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-generate:hover  { opacity: 0.9; transform: translateY(-1px); }
+    .btn-generate:active { transform: translateY(0); }
+
+    /* Loading shimmer */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position:  400px 0; }
+    }
+    .shimmer {
+      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    .shimmer-light {
+      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Spinner */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .spinner {
+      border: 3px solid rgba(99,102,241,0.25);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    /* Toast slide-in */
+    @keyframes toast-in {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes toast-out {
+      from { transform: translateX(0);    opacity: 1; }
+      to   { transform: translateX(110%); opacity: 0; }
+    }
+    .toast-enter { animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+    .toast-exit  { animation: toast-out 0.3s ease forwards; }
+
+    /* Drawer slide */
+    @keyframes drawer-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    .drawer-enter { animation: drawer-in 0.3s cubic-bezier(0.34,1.2,0.64,1) forwards; }
+
+    /* Fade-in for results */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fade-up 0.4s ease forwards; }
+
+    /* Phase badge pulse */
+    @keyframes badge-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+      50%       { box-shadow: 0 0 8px 2px currentColor; }
+    }
+
+    /* ── Prose: markdown output styles ─────────────────────── */
+    .prose-output { line-height: 1.75; }
+
+    .prose-output h1 {
+      font-size: 1.6rem; font-weight: 800;
+      margin: 1.75rem 0 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(99,102,241,0.4);
+    }
+    .prose-output h2 {
+      font-size: 1.3rem; font-weight: 700;
+      margin: 1.5rem 0 0.6rem;
+      color: #8b5cf6;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .prose-output h3 {
+      font-size: 1.1rem; font-weight: 600;
+      margin: 1.1rem 0 0.5rem;
+      color: #6366f1;
+    }
+    .prose-output h4 { font-size: 1rem; font-weight: 600; margin: 0.8rem 0 0.4rem; }
+    .prose-output p  { margin: 0.6rem 0; }
+    .prose-output strong { font-weight: 700; }
+    .prose-output em { font-style: italic; }
+    .prose-output hr { border: none; border-top: 1px solid rgba(99,102,241,0.3); margin: 1.5rem 0; }
+
+    .prose-output table {
+      width: 100%; border-collapse: collapse;
+      margin: 1rem 0; font-size: 0.875rem; border-radius: 0.5rem; overflow: hidden;
+    }
+    .prose-output th {
+      padding: 0.55rem 0.85rem; text-align: left; font-weight: 600;
+      background: rgba(99,102,241,0.18);
+      border-bottom: 2px solid rgba(99,102,241,0.35);
+    }
+    .prose-output td {
+      padding: 0.5rem 0.85rem;
+      border-bottom: 1px solid rgba(99,102,241,0.12);
+      vertical-align: top;
+    }
+    .prose-output tr:last-child td { border-bottom: none; }
+    .prose-output tr:hover td { background: rgba(99,102,241,0.07); }
+
+    .prose-output ul { list-style: none; padding-left: 1.25rem; margin: 0.5rem 0; }
+    .prose-output ul li::before { content: "▸"; color: #6366f1; margin-right: 0.5rem; }
+    .prose-output ol { padding-left: 1.75rem; margin: 0.5rem 0; }
+    .prose-output li { margin: 0.3rem 0; }
+
+    .prose-output code {
+      background: rgba(99,102,241,0.15);
+      padding: 0.1rem 0.4rem; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+    }
+    .prose-output pre {
+      background: #0f172a; padding: 1rem 1.25rem;
+      border-radius: 0.6rem; overflow-x: auto;
+      margin: 0.75rem 0; border: 1px solid rgba(99,102,241,0.2);
+    }
+    .prose-output pre code { background: none; padding: 0; font-size: 0.82rem; }
+    .prose-output blockquote {
+      border-left: 4px solid #6366f1;
+      padding-left: 1rem; margin: 0.75rem 0;
+      opacity: 0.85; font-style: italic;
+    }
+
+    /* Light mode prose overrides */
+    .light .prose-output th { background: rgba(99,102,241,0.1); }
+    .light .prose-output pre { background: #f8fafc; border-color: #e2e8f0; }
+    .light .prose-output code { background: #ede9fe; }
+
+    /* Module chip selected state */
+    .chip-selected {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+      color: #fff !important;
+      border-color: transparent !important;
+      box-shadow: 0 2px 12px rgba(99,102,241,0.4);
+    }
+
+    /* Input glowing outline */
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.4);
+    }
+
+    /* Smooth theme transitions */
+    body, .card, input, textarea, select, button {
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-[#080d1a] min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+    /* ═══════════════════════════════════════════════════════════
+       UTILITIES
+    ═══════════════════════════════════════════════════════════ */
+
+    function extractDesc(node) {
+      if (!node) return '';
+      if (typeof node === 'string') return node;
+      if (node.type === 'text') return node.text || '';
+      if (node.type === 'hardBreak') return '\n';
+      if (node.type === 'mention') return `@${node.attrs?.text || ''}`;
+      if (node.type === 'inlineCard') return node.attrs?.url || '';
+      if (node.type === 'paragraph') {
+        return (node.content || []).map(extractDesc).join('') + '\n';
+      }
+      if (node.type === 'heading') {
+        const lvl = node.attrs?.level || 1;
+        return '#'.repeat(lvl) + ' ' + (node.content || []).map(extractDesc).join('') + '\n';
+      }
+      if (node.type === 'bulletList' || node.type === 'taskList') {
+        return (node.content || []).map(c => '• ' + (c.content || []).map(extractDesc).join('')).join('') + '\n';
+      }
+      if (node.type === 'orderedList') {
+        return (node.content || []).map((c, i) => `${i+1}. ` + (c.content || []).map(extractDesc).join('')).join('') + '\n';
+      }
+      if (node.type === 'codeBlock') {
+        return '```\n' + (node.content || []).map(extractDesc).join('') + '\n```\n';
+      }
+      if (node.type === 'blockquote') {
+        return '> ' + (node.content || []).map(extractDesc).join('');
+      }
+      if (node.content) return (node.content || []).map(extractDesc).join('');
+      return '';
+    }
+
+    function adfToText(adf) {
+      if (!adf) return '';
+      if (typeof adf === 'string') return adf;
+      if (adf.type === 'doc') return (adf.content || []).map(extractDesc).join('').trim();
+      return JSON.stringify(adf).slice(0, 500);
+    }
+
+    function priorityColor(p = '') {
+      const s = p.toLowerCase();
+      if (s === 'highest') return 'bg-red-500/20 text-red-400 border-red-400/30';
+      if (s === 'high')    return 'bg-orange-500/20 text-orange-400 border-orange-400/30';
+      if (s === 'medium')  return 'bg-amber-500/20 text-amber-400 border-amber-400/30';
+      if (s === 'low')     return 'bg-green-500/20 text-green-400 border-green-400/30';
+      return 'bg-slate-500/20 text-slate-400 border-slate-400/30';
+    }
+
+    function statusColor(s = '') {
+      const c = (s || '').toLowerCase();
+      if (c.includes('done') || c.includes('closed') || c.includes('complete')) return 'bg-green-500/20 text-green-400 border-green-400/30';
+      if (c.includes('progress') || c.includes('review'))  return 'bg-blue-500/20 text-blue-400 border-blue-400/30';
+      if (c.includes('block'))  return 'bg-red-500/20 text-red-400 border-red-400/30';
+      return 'bg-slate-500/20 text-slate-400 border-slate-400/30';
+    }
+
+    function typeColor(t = '') {
+      const s = (t || '').toLowerCase();
+      if (s === 'bug')   return 'bg-red-500/20 text-red-400';
+      if (s === 'epic')  return 'bg-purple-500/20 text-purple-400';
+      if (s === 'story') return 'bg-blue-500/20 text-blue-400';
+      if (s === 'task')  return 'bg-teal-500/20 text-teal-400';
+      return 'bg-slate-500/20 text-slate-400';
+    }
+
+    function buildTestPlanPrompt(issue) {
+      const f   = issue.fields || {};
+      const desc = adfToText(f.description) || 'No description provided.';
+      const labels = (f.labels || []).join(', ') || 'None';
+      const components = (f.components || []).map(c => c.name).join(', ') || 'None';
+
+      return `You are a Senior QA Engineer with 15+ years of experience. Generate a comprehensive, professional Test Plan following the B.L.A.S.T Framework.
+
+━━━ ANTI-HALLUCINATION PROTOCOL (MANDATORY) ━━━
+• Use ONLY information from the Jira issue below.
+• Never invent endpoints, UI elements, passwords, or features not mentioned.
+• Insufficient info → write: ⚠️ Insufficient information — [what's missing]
+• Inferences → tag: [INFERENCE]
+• Assumptions → tag: [ASSUMPTION]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JIRA ISSUE DATA:
+Issue Key:    ${issue.key}
+Summary:      ${f.summary || 'N/A'}
+Type:         ${f.issuetype?.name || 'N/A'}
+Priority:     ${f.priority?.name || 'N/A'}
+Status:       ${f.status?.name || 'N/A'}
+Reporter:     ${f.reporter?.displayName || 'N/A'}
+Assignee:     ${f.assignee?.displayName || 'Unassigned'}
+Labels:       ${labels}
+Components:   ${components}
+
+Description:
+${desc}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Generate the FULL B.L.A.S.T Test Plan below. Every section must be complete.
+
+---
+
+# 🚀 Test Plan: ${issue.key} — ${f.summary || ''}
+
+> **Framework:** B.L.A.S.T · **Generated:** ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })} · **Priority:** ${f.priority?.name || 'N/A'}
+
+---
+
+## Executive Summary
+[2–3 sentences: what is being tested, why it matters, overall risk level]
+
+---
+
+## 🏗️ B — Blueprint (Vision & Logic)
+
+### North Star
+[The single primary outcome this testing effort must achieve]
+
+### Scope
+**In Scope:**
+- [item]
+
+**Out of Scope:**
+- [item]
+
+### Acceptance Criteria
+| # | Criterion | Verification Method |
+|---|-----------|---------------------|
+| 1 | | |
+
+---
+
+## 🔗 L — Link (Connectivity & Dependencies)
+
+### System Under Test
+[Component or feature being tested]
+
+### Dependencies
+| Dependency | Type | Risk |
+|------------|------|------|
+
+### Test Data Requirements
+[Data needed to execute the tests]
+
+### Integration Points
+[APIs, databases, third-party services involved]
+
+---
+
+## ⚙️ A — Architect (Test Strategy)
+
+### Test Types
+| Test Type | Approach | Tools | Priority |
+|-----------|----------|-------|----------|
+
+### Test Environments
+| Environment | URL / Location | Purpose |
+|-------------|----------------|---------|
+
+### Execution Order
+1. [Phase 1]
+2. [Phase 2]
+3. [Phase 3]
+
+---
+
+## ✨ S — Stylize (Test Cases)
+
+### ✅ Positive Test Cases
+| TC-ID | Scenario | Preconditions | Steps | Expected Result | Priority |
+|-------|----------|---------------|-------|-----------------|----------|
+
+### ❌ Negative Test Cases
+| TC-ID | Scenario | Input | Expected Behavior | Priority |
+|-------|----------|-------|-------------------|----------|
+
+### ⚡ Edge Cases
+| TC-ID | Scenario | Boundary | Expected Result |
+|-------|----------|----------|----------------|
+
+---
+
+## 🛰️ T — Trigger (Automation & Reporting)
+
+### Automation Candidates
+| Test Case | Suitability | Rationale |
+|-----------|-------------|-----------|
+
+### CI/CD Integration
+[How tests plug into the pipeline]
+
+### Reporting Metrics
+- Pass Rate Target:
+- Critical Coverage:
+- Estimated Run Time:
+
+---
+
+## ⚠️ Risk Assessment
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|-----------|
+
+---
+
+## 📋 Entry & Exit Criteria
+
+### Entry Criteria
+- [ ] [condition]
+
+### Exit Criteria
+- [ ] All P1 tests pass
+- [ ] [condition]
+`;
+    }
+
+    function buildTestCasePrompt(cfg) {
+      const { modules, testTypes, priority, context } = cfg;
+      return `You are a Senior QA Engineer with 15+ years of e-commerce testing experience. Apply the RICE-POT Framework.
+
+ROLE: Senior QA Engineer — E-Commerce Specialist
+INSTRUCTIONS: Generate detailed, actionable test cases for the selected modules only.
+CONTEXT: Standard e-commerce web platform (catalog, cart, checkout, payment, account).
+EXAMPLE ROW: TC-AUTH-001 | User Auth | Valid Login | User on /login | 1. Enter valid email 2. Enter valid password 3. Click Sign In | Redirected to dashboard; session created | High | Functional
+PARAMETERS: Anti-hallucination — use only standard e-commerce behaviour. Mark assumptions with [ASSUMPTION].
+OUTPUT: Markdown with one table per module, TC-[ABBREV]-[3-digit] IDs.
+TONE: Technical, precise, professional.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONFIGURATION:
+Modules:     ${modules.join(', ')}
+Test Types:  ${testTypes.length ? testTypes.join(', ') : 'All'}
+Priority:    ${priority}
+Context:     ${context || 'None'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For EACH selected module generate:
+1. A ## Module Name header
+2. A one-line description of what is being tested
+3. A table: | TC-ID | Module | Scenario | Preconditions | Steps | Expected Result | Priority | Type |
+4. 4–5 positive cases · 2–3 negative cases · 1–2 edge cases · 1 security case where relevant
+
+Modules to cover (generate ALL): ${modules.join(', ')}
+`;
+    }
+
+    function safeMd(html) {
+      return html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    }
+
+    async function copyText(text) {
+      await navigator.clipboard.writeText(text);
+    }
+
+    function downloadMd(content, filename) {
+      const a   = document.createElement('a');
+      a.href    = URL.createObjectURL(new Blob([content], { type: 'text/markdown' }));
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SMALL COMPONENTS
+    ═══════════════════════════════════════════════════════════ */
+
+    const Spinner = ({ size = 28 }) => (
+      <div
+        className="spinner"
+        style={{ width: size, height: size, flexShrink: 0 }}
+      />
+    );
+
+    const Badge = ({ label, cls }) => (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+        {label}
+      </span>
+    );
+
+    let _toastId = 0;
+    const Toast = ({ message, type, onClose }) => {
+      const [exit, setExit] = useState(false);
+      useEffect(() => {
+        const t1 = setTimeout(() => setExit(true), 3300);
+        const t2 = setTimeout(onClose, 3650);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+      }, []);
+
+      const colors = {
+        success: 'bg-green-500',
+        error:   'bg-red-500',
+        info:    'bg-indigo-500',
+        warning: 'bg-amber-500',
+      };
+      const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+
+      return (
+        <div className={`${exit ? 'toast-exit' : 'toast-enter'} fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-white text-sm font-medium min-w-[260px] max-w-sm ${colors[type] || colors.info}`}>
+          <span className="text-lg leading-none">{icons[type] || icons.info}</span>
+          <span className="flex-1">{message}</span>
+          <button onClick={() => { setExit(true); setTimeout(onClose, 300); }} className="opacity-70 hover:opacity-100 text-base">×</button>
+        </div>
+      );
+    };
+
+    const CopyDownloadBar = ({ content, filename, darkMode }) => {
+      const [copied, setCopied] = useState(false);
+      return (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={async () => { await copyText(content); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              darkMode ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            {copied ? '✓ Copied!' : '⎘ Copy'}
+          </button>
+          <button
+            onClick={() => downloadMd(content, filename)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              darkMode ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            ↓ Download .md
+          </button>
+        </div>
+      );
+    };
+
+    const MarkdownOutput = ({ content, filename, darkMode }) => {
+      const html = useMemo(() => safeMd(marked.parse(content || '')), [content]);
+      return (
+        <div className="fade-up space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className={`text-xs font-semibold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              Generated Output
+            </span>
+            <CopyDownloadBar content={content} filename={filename} darkMode={darkMode} />
+          </div>
+          <div
+            className={`prose-output rounded-xl p-5 overflow-x-auto text-sm leading-relaxed border ${
+              darkMode
+                ? 'bg-slate-900/80 border-indigo-500/20 text-slate-200'
+                : 'bg-white border-slate-200 text-slate-800'
+            }`}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </div>
+      );
+    };
+
+    const TokenBadge = ({ usage, model }) => {
+      if (!usage) return null;
+      return (
+        <div className="flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-500 mt-1">
+          <span>Model: <strong className="text-indigo-400">{model}</strong></span>
+          <span>Prompt: <strong>{usage.prompt_tokens?.toLocaleString()}</strong> tokens</span>
+          <span>Completion: <strong>{usage.completion_tokens?.toLocaleString()}</strong> tokens</span>
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════════════════ */
+
+    const Header = ({ darkMode, toggleDark, openSettings }) => {
+      const letters = [
+        { l: 'B', c: '#6366f1', title: 'Blueprint' },
+        { l: 'L', c: '#3b82f6', title: 'Link' },
+        { l: 'A', c: '#8b5cf6', title: 'Architect' },
+        { l: 'S', c: '#ec4899', title: 'Stylize' },
+        { l: 'T', c: '#f97316', title: 'Trigger' },
+      ];
+      return (
+        <header className={`sticky top-0 z-50 border-b ${
+          darkMode ? 'bg-[#080d1a]/90 border-indigo-500/15 backdrop-blur-xl' : 'bg-white/90 border-slate-200 backdrop-blur-xl'
+        }`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            {/* Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                <span className="text-white font-black text-sm">B</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-0.5">
+                  {letters.map(({ l, c, title }) => (
+                    <span
+                      key={l}
+                      title={`${l} — ${title}`}
+                      className="font-black text-lg cursor-default select-none leading-none"
+                      style={{ color: c, letterSpacing: '0.04em' }}
+                    >
+                      {l}
+                    </span>
+                  ))}
+                  <span className={`ml-1 font-black text-lg tracking-wide ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    .A.S.T
+                  </span>
+                </div>
+                <p className={`text-[10px] font-medium tracking-widest uppercase ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  AI Test Plan Generator
+                </p>
+              </div>
+            </div>
+
+            {/* Phase badges (desktop) */}
+            <div className="hidden lg:flex items-center gap-1.5">
+              {letters.map(({ l, c, title }) => (
+                <span
+                  key={l}
+                  className="px-2 py-0.5 rounded text-xs font-bold"
+                  style={{ background: `${c}22`, color: c, border: `1px solid ${c}44` }}
+                >
+                  {l} — {title}
+                </span>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleDark}
+                title="Toggle theme"
+                className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
+                  darkMode ? 'bg-slate-800 hover:bg-slate-700 text-yellow-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {darkMode ? '☀' : '🌙'}
+              </button>
+              <button
+                onClick={openSettings}
+                title="Settings"
+                className="px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-all"
+                style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff' }}
+              >
+                <span>⚙</span>
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+            </div>
+          </div>
+        </header>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       SETTINGS DRAWER
+    ═══════════════════════════════════════════════════════════ */
+
+    const GROQ_MODELS = [
+      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile (Free ★)' },
+      { value: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B Instant (Fast, Free)' },
+      { value: 'mixtral-8x7b-32768',       label: 'Mixtral 8x7B (Free)' },
+      { value: 'gemma2-9b-it',             label: 'Gemma 2 9B (Free)' },
+      { value: 'compound-beta',            label: 'Compound Beta (Agentic)' },
+      { value: 'openai/gpt-oss-120b',      label: 'GPT-OSS 120B (Experimental)' },
+      { value: '__custom__',               label: 'Custom model ID…' },
+    ];
+
+    const SettingsDrawer = ({ open, onClose, settings, onSave, showToast, darkMode, envInfo }) => {
+      const [local, setLocal] = useState({ ...settings });
+      const [showTokens, setShowTokens] = useState({ jiraToken: false, groqKey: false });
+      const [useCustomModel, setUseCustomModel] = useState(
+        !GROQ_MODELS.some(m => m.value === settings.groqModel && m.value !== '__custom__')
+      );
+
+      const set = (k) => (e) => setLocal(p => ({ ...p, [k]: e.target.value }));
+
+      const save = () => {
+        if (useCustomModel && local.groqModel === '__custom__') {
+          showToast('Enter a custom model ID', 'warning'); return;
+        }
+        localStorage.setItem('blast-settings', JSON.stringify(local));
+        onSave(local);
+        showToast('Settings saved!', 'success');
+        onClose();
+      };
+
+      const cardCls = darkMode
+        ? 'bg-slate-800/60 border border-slate-700/60 rounded-xl p-4 space-y-3'
+        : 'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3';
+
+      const inputCls = `w-full rounded-lg px-3 py-2 text-sm font-mono border ${
+        darkMode
+          ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder-slate-600'
+          : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+      }`;
+
+      const labelCls = `block text-xs font-semibold mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`;
+
+      const SecretInput = ({ field, placeholder, label }) => (
+        <div>
+          <label className={labelCls}>{label}</label>
+          <div className="relative">
+            <input
+              type={showTokens[field] ? 'text' : 'password'}
+              value={local[field] || ''}
+              onChange={set(field)}
+              placeholder={placeholder}
+              className={`${inputCls} pr-10`}
+            />
+            <button
+              onClick={() => setShowTokens(p => ({ ...p, [field]: !p[field] }))}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-sm"
+            >
+              {showTokens[field] ? '🙈' : '👁'}
+            </button>
+          </div>
+        </div>
+      );
+
+      if (!open) return null;
+
+      return (
+        <div className="fixed inset-0 z-[100] flex">
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+          {/* Panel */}
+          <div
+            className={`drawer-enter w-full max-w-md overflow-y-auto ${
+              darkMode ? 'bg-[#0e1525] text-slate-100' : 'bg-white text-slate-900'
+            } shadow-2xl`}
+          >
+            <div className="p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">⚙ Settings</h2>
+                <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-500/20 text-red-400">✕</button>
+              </div>
+
+              {/* Env status */}
+              {envInfo && (
+                <div className={`rounded-lg p-3 text-xs space-y-1 ${darkMode ? 'bg-slate-800/60' : 'bg-indigo-50'}`}>
+                  <p className="font-bold text-indigo-400 mb-1.5">Server ENV status</p>
+                  {[
+                    ['GROQ Key',   envInfo.hasGroqKey],
+                    ['JIRA Email', envInfo.hasJiraEmail],
+                    ['JIRA Token', envInfo.hasJiraToken],
+                    ['JIRA Base',  !!envInfo.jiraBase],
+                  ].map(([label, ok]) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className={ok ? 'text-green-400' : 'text-red-400'}>{ok ? '✓' : '✕'}</span>
+                      <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>{label}</span>
+                      {ok && envInfo.jiraBase && label === 'JIRA Base' && (
+                        <span className="text-indigo-400 truncate max-w-[180px]">{envInfo.jiraBase}</span>
+                      )}
+                    </div>
+                  ))}
+                  <p className={`mt-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Fields here override the .env file.
+                  </p>
+                </div>
+              )}
+
+              {/* JIRA section */}
+              <section className={cardCls}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-blue-400 text-lg">🔗</span>
+                  <h3 className="font-bold text-sm">JIRA Configuration</h3>
+                </div>
+                <div>
+                  <label className={labelCls}>Email</label>
+                  <input type="email" value={local.jiraEmail || ''} onChange={set('jiraEmail')} placeholder="you@company.com" className={inputCls} />
+                </div>
+                <SecretInput field="jiraToken" label="API Token" placeholder="ATATT3xFf…" />
+                <div>
+                  <label className={labelCls}>Base URL <span className={darkMode ? 'text-slate-600 font-normal' : 'text-slate-400 font-normal'}>(e.g. https://org.atlassian.net)</span></label>
+                  <input type="url" value={local.jiraUrl || ''} onChange={set('jiraUrl')} placeholder="https://your-org.atlassian.net" className={inputCls} />
+                </div>
+              </section>
+
+              {/* GROQ section */}
+              <section className={cardCls}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-purple-400 text-lg">🤖</span>
+                  <h3 className="font-bold text-sm">GROQ Configuration</h3>
+                </div>
+                <SecretInput field="groqKey" label="API Key" placeholder="gsk_…" />
+                <div>
+                  <label className={labelCls}>Model</label>
+                  <select
+                    value={useCustomModel ? '__custom__' : (local.groqModel || 'llama-3.3-70b-versatile')}
+                    onChange={e => {
+                      if (e.target.value === '__custom__') {
+                        setUseCustomModel(true);
+                        setLocal(p => ({ ...p, groqModel: '' }));
+                      } else {
+                        setUseCustomModel(false);
+                        setLocal(p => ({ ...p, groqModel: e.target.value }));
+                      }
+                    }}
+                    className={`${inputCls} cursor-pointer`}
+                  >
+                    {GROQ_MODELS.map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                  {useCustomModel && (
+                    <input
+                      type="text"
+                      value={local.groqModel || ''}
+                      onChange={set('groqModel')}
+                      placeholder="model-id"
+                      className={`${inputCls} mt-2`}
+                    />
+                  )}
+                </div>
+              </section>
+
+              <button
+                onClick={save}
+                className="w-full py-2.5 rounded-xl font-bold text-sm text-white btn-generate"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       JIRA ISSUE CARD
+    ═══════════════════════════════════════════════════════════ */
+
+    const JiraIssueCard = ({ issue, darkMode }) => {
+      const f    = issue.fields || {};
+      const desc = adfToText(f.description);
+      const [expand, setExpand] = useState(false);
+      const SHORT = 300;
+
+      return (
+        <div className={`rounded-xl border overflow-hidden fade-up ${
+          darkMode ? 'bg-slate-900/70 border-indigo-500/20' : 'bg-white border-slate-200'
+        }`}>
+          {/* Top bar */}
+          <div className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap border-b" style={{ borderColor: 'rgba(99,102,241,0.15)', background: 'linear-gradient(90deg,rgba(99,102,241,0.08),rgba(139,92,246,0.06))' }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono font-bold text-indigo-400 text-sm">{issue.key}</span>
+              <Badge label={f.issuetype?.name || '?'} cls={typeColor(f.issuetype?.name)} />
+              <Badge label={f.priority?.name || '?'} cls={priorityColor(f.priority?.name)} />
+              <Badge label={f.status?.name || '?'} cls={statusColor(f.status?.name)} />
+            </div>
+            <a
+              href={`${(issue._baseUrl || '')}/browse/${issue.key}`}
+              target="_blank" rel="noreferrer"
+              className="text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+            >
+              Open in Jira ↗
+            </a>
+          </div>
+
+          <div className="p-4 space-y-3">
+            <h3 className={`font-bold text-base leading-snug ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+              {f.summary}
+            </h3>
+
+            <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              {[
+                ['Reporter',  f.reporter?.displayName  || '—'],
+                ['Assignee',  f.assignee?.displayName  || 'Unassigned'],
+                ['Labels',    (f.labels||[]).join(', ') || '—'],
+                ['Components',(f.components||[]).map(c=>c.name).join(', ')||'—'],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <span className={`block font-semibold mb-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{k}</span>
+                  <span>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {desc && (
+              <div>
+                <p className={`text-xs font-semibold mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Description</p>
+                <p className={`text-sm leading-relaxed whitespace-pre-wrap ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {expand || desc.length <= SHORT ? desc : desc.slice(0, SHORT) + '…'}
+                </p>
+                {desc.length > SHORT && (
+                  <button onClick={() => setExpand(e => !e)} className="text-xs text-indigo-400 hover:text-indigo-300 mt-1">
+                    {expand ? 'Show less ▲' : 'Show more ▼'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       TEST PLAN TAB
+    ═══════════════════════════════════════════════════════════ */
+
+    const TestPlanTab = ({ settings, showToast, darkMode }) => {
+      const [jiraId,   setJiraId]   = useState('');
+      const [issue,    setIssue]    = useState(null);
+      const [plan,     setPlan]     = useState('');
+      const [usage,    setUsage]    = useState(null);
+      const [usedModel, setUsedModel] = useState('');
+      const [loading,  setLoading]  = useState({ jira: false, gen: false });
+      const [jiraErr,  setJiraErr]  = useState('');
+      const [genErr,   setGenErr]   = useState('');
+
+      const inputCls = `w-full rounded-xl px-4 py-3 font-mono font-semibold text-sm border transition-all ${
+        darkMode
+          ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder-slate-600'
+          : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+      }`;
+
+      const fetchJira = async () => {
+        const id = jiraId.trim().toUpperCase();
+        if (!id) { showToast('Enter a Jira issue ID', 'warning'); return; }
+        setJiraErr(''); setIssue(null); setPlan('');
+        setLoading(p => ({ ...p, jira: true }));
+        try {
+          const params = new URLSearchParams();
+          if (settings.jiraUrl)   params.set('jiraUrl',   settings.jiraUrl);
+          if (settings.jiraEmail) params.set('jiraEmail', settings.jiraEmail);
+          if (settings.jiraToken) params.set('jiraToken', settings.jiraToken);
+          const r    = await fetch(`/api/jira/${encodeURIComponent(id)}?${params}`);
+          const data = await r.json();
+          if (!r.ok) { setJiraErr(data.error || 'Jira fetch failed'); showToast(data.error || 'Jira error', 'error'); return; }
+          const base = (settings.jiraUrl || '').replace(/\/browse\/.*$/, '').replace(/\/$/, '');
+          data._baseUrl = base;
+          setIssue(data);
+          showToast(`Fetched ${data.key} ✓`, 'success');
+        } catch (e) {
+          setJiraErr(e.message); showToast('Network error', 'error');
+        } finally {
+          setLoading(p => ({ ...p, jira: false }));
+        }
+      };
+
+      const generate = async () => {
+        if (!issue) { showToast('Fetch a Jira issue first', 'warning'); return; }
+        setGenErr(''); setPlan('');
+        setLoading(p => ({ ...p, gen: true }));
+        try {
+          const prompt = buildTestPlanPrompt(issue);
+          const model  = settings.groqModel || 'llama-3.3-70b-versatile';
+          const r = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, model, groqKey: settings.groqKey || undefined }),
+          });
+          const data = await r.json();
+          if (!r.ok) { setGenErr(data.error || 'Generation failed'); showToast(data.error || 'GROQ error', 'error'); return; }
+          setPlan(data.content);
+          setUsage(data.usage);
+          setUsedModel(data.model);
+          showToast('Test plan generated! ✓', 'success');
+        } catch (e) {
+          setGenErr(e.message); showToast('Network error', 'error');
+        } finally {
+          setLoading(p => ({ ...p, gen: false }));
+        }
+      };
+
+      const cardCls = `rounded-2xl border p-5 space-y-4 ${
+        darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+      }`;
+
+      return (
+        <div className="space-y-6 max-w-4xl mx-auto">
+          {/* Step 1: Fetch */}
+          <div className={cardCls}>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>1</span>
+              <h2 className={`font-bold text-base ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>Fetch Jira Issue</h2>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={jiraId}
+                onChange={e => setJiraId(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && fetchJira()}
+                placeholder="e.g. SCRUM-6"
+                className={`${inputCls} flex-1`}
+              />
+              <button
+                onClick={fetchJira}
+                disabled={loading.jira}
+                className="px-5 py-3 rounded-xl font-bold text-sm text-white flex items-center gap-2 transition-all btn-generate disabled:opacity-60"
+              >
+                {loading.jira ? <Spinner size={16} /> : '⇩'}
+                {loading.jira ? 'Fetching…' : 'Fetch'}
+              </button>
+            </div>
+            {jiraErr && (
+              <div className="rounded-lg px-4 py-3 text-sm bg-red-500/10 border border-red-500/30 text-red-400">
+                ✕ {jiraErr}
+              </div>
+            )}
+            {loading.jira && (
+              <div className={`rounded-xl h-24 shimmer ${darkMode ? '' : 'shimmer-light'}`} />
+            )}
+            {issue && !loading.jira && <JiraIssueCard issue={issue} darkMode={darkMode} />}
+          </div>
+
+          {/* Step 2: Generate */}
+          <div className={cardCls}>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: 'linear-gradient(135deg,#8b5cf6,#3b82f6)' }}>2</span>
+              <h2 className={`font-bold text-base ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>Generate B.L.A.S.T Test Plan</h2>
+            </div>
+
+            <div className={`rounded-xl p-3 flex flex-wrap gap-4 text-xs ${darkMode ? 'bg-slate-800/50' : 'bg-indigo-50'}`}>
+              {[
+                ['B', '#6366f1', 'Blueprint'],
+                ['L', '#3b82f6', 'Link'],
+                ['A', '#8b5cf6', 'Architect'],
+                ['S', '#ec4899', 'Stylize'],
+                ['T', '#f97316', 'Trigger'],
+              ].map(([letter, color, name]) => (
+                <div key={letter} className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded text-xs font-black flex items-center justify-center text-white" style={{ background: color }}>{letter}</span>
+                  <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>{name}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={generate}
+              disabled={!issue || loading.gen}
+              className="w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 btn-generate disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading.gen ? <><Spinner size={18} /><span>Generating…</span></> : <><span>🚀</span><span>Generate B.L.A.S.T Test Plan</span></>}
+            </button>
+
+            {genErr && (
+              <div className="rounded-lg px-4 py-3 text-sm bg-red-500/10 border border-red-500/30 text-red-400">✕ {genErr}</div>
+            )}
+
+            {loading.gen && (
+              <div className="space-y-2">
+                {[1, 0.85, 0.7].map((w, i) => (
+                  <div key={i} className={`h-4 rounded shimmer ${darkMode ? '' : 'shimmer-light'}`} style={{ width: `${w*100}%` }} />
+                ))}
+              </div>
+            )}
+
+            {plan && !loading.gen && (
+              <>
+                <TokenBadge usage={usage} model={usedModel} />
+                <MarkdownOutput content={plan} filename={`${issue?.key || 'test'}-plan.md`} darkMode={darkMode} />
+              </>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       TEST CASE GENERATOR TAB (E-COMMERCE)
+    ═══════════════════════════════════════════════════════════ */
+
+    const MODULES = [
+      { id: 'auth',       icon: '🔐', label: 'User Auth',      sub: 'Login · Register · Reset' },
+      { id: 'catalog',    icon: '📦', label: 'Product Catalog', sub: 'Listing · Details · Images' },
+      { id: 'search',     icon: '🔍', label: 'Search & Filters',sub: 'Keyword · Category · Price' },
+      { id: 'cart',       icon: '🛒', label: 'Shopping Cart',   sub: 'Add · Remove · Quantity' },
+      { id: 'checkout',   icon: '📋', label: 'Checkout',        sub: 'Guest · Address · Shipping' },
+      { id: 'payment',    icon: '💳', label: 'Payment',         sub: 'Cards · Wallets · Validation' },
+      { id: 'orders',     icon: '📦', label: 'Order Management',sub: 'History · Tracking · Returns' },
+      { id: 'account',    icon: '👤', label: 'User Account',    sub: 'Profile · Wishlist · Notifs' },
+      { id: 'performance',icon: '⚡', label: 'Performance',     sub: 'Load · Mobile · Concurrent' },
+      { id: 'security',   icon: '🛡️', label: 'Security',        sub: 'XSS · SQLi · CSRF · Privacy' },
+    ];
+
+    const TEST_TYPES = [
+      'Functional','Regression','Smoke','Integration',
+      'Performance','Security','UI/UX','Accessibility','API',
+    ];
+
+    const PRIORITIES = [
+      { value: 'all',    label: 'All Priorities' },
+      { value: 'high',   label: 'High & Critical' },
+      { value: 'medium', label: 'Medium & Above' },
+      { value: 'low',    label: 'Low Priority' },
+    ];
+
+    const TestCaseTab = ({ settings, showToast, darkMode }) => {
+      const [modules,   setModules]   = useState([]);
+      const [testTypes, setTestTypes] = useState(['Functional']);
+      const [priority,  setPriority]  = useState('all');
+      const [context,   setContext]   = useState('');
+      const [output,    setOutput]    = useState('');
+      const [usage,     setUsage]     = useState(null);
+      const [usedModel, setUsedModel] = useState('');
+      const [loading,   setLoading]   = useState(false);
+      const [genErr,    setGenErr]    = useState('');
+
+      const toggleModule   = id  => setModules(p  => p.includes(id)  ? p.filter(x=>x!==id)  : [...p, id]);
+      const toggleTestType = t   => setTestTypes(p => p.includes(t)  ? p.filter(x=>x!==t)   : [...p, t]);
+      const selectAll      = ()  => setModules(MODULES.map(m => m.id));
+      const clearAll       = ()  => setModules([]);
+
+      const cardCls = `rounded-2xl border p-5 space-y-4 ${
+        darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+      }`;
+      const sectionLabel = `text-xs font-bold uppercase tracking-widest mb-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`;
+      const inputCls = `w-full rounded-xl px-3 py-2.5 text-sm border resize-y ${
+        darkMode ? 'bg-slate-900 border-slate-700 text-slate-100 placeholder-slate-600' : 'bg-white border-slate-300 text-slate-900'
+      }`;
+
+      const generate = async () => {
+        if (!modules.length) { showToast('Select at least one module', 'warning'); return; }
+        setGenErr(''); setOutput('');
+        setLoading(true);
+        try {
+          const modLabels = modules.map(id => MODULES.find(m => m.id === id)?.label || id);
+          const prompt    = buildTestCasePrompt({ modules: modLabels, testTypes, priority, context });
+          const model     = settings.groqModel || 'llama-3.3-70b-versatile';
+          const r = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, model, groqKey: settings.groqKey || undefined }),
+          });
+          const data = await r.json();
+          if (!r.ok) { setGenErr(data.error || 'Generation failed'); showToast(data.error || 'GROQ error', 'error'); return; }
+          setOutput(data.content);
+          setUsage(data.usage);
+          setUsedModel(data.model);
+          showToast('Test cases generated! ✓', 'success');
+        } catch (e) {
+          setGenErr(e.message); showToast('Network error', 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl mx-auto">
+          <div className={cardCls}>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🛒</span>
+              <div>
+                <h2 className={`font-bold text-base ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>E-Commerce Test Case Generator</h2>
+                <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Powered by B.L.A.S.T + RICE-POT Frameworks</p>
+              </div>
+            </div>
+
+            {/* Module selector */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className={sectionLabel}>Select Modules</p>
+                <div className="flex gap-2">
+                  <button onClick={selectAll} className="text-xs text-indigo-400 hover:text-indigo-300">All</button>
+                  <span className={darkMode ? 'text-slate-700' : 'text-slate-300'}>|</span>
+                  <button onClick={clearAll}  className="text-xs text-slate-500 hover:text-slate-400">Clear</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                {MODULES.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleModule(m.id)}
+                    className={`rounded-xl px-3 py-2.5 text-left transition-all border ${
+                      modules.includes(m.id)
+                        ? 'chip-selected'
+                        : darkMode
+                          ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-indigo-500/50'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-300'
+                    }`}
+                  >
+                    <span className="text-lg block mb-0.5">{m.icon}</span>
+                    <span className="text-xs font-semibold block leading-tight">{m.label}</span>
+                    <span className={`text-[10px] block leading-tight mt-0.5 ${modules.includes(m.id) ? 'text-indigo-200' : darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{m.sub}</span>
+                  </button>
+                ))}
+              </div>
+              {modules.length > 0 && (
+                <p className="text-xs text-indigo-400 mt-1.5">{modules.length} module{modules.length > 1 ? 's' : ''} selected</p>
+              )}
+            </div>
+
+            {/* Test types */}
+            <div>
+              <p className={sectionLabel}>Test Types</p>
+              <div className="flex flex-wrap gap-2">
+                {TEST_TYPES.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => toggleTestType(t)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                      testTypes.includes(t)
+                        ? 'chip-selected'
+                        : darkMode
+                          ? 'bg-slate-800 border-slate-700 text-slate-400 hover:border-indigo-500/40'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-300'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Priority + context */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <p className={sectionLabel}>Priority Focus</p>
+                <div className="flex gap-2 flex-wrap">
+                  {PRIORITIES.map(p => (
+                    <button
+                      key={p.value}
+                      onClick={() => setPriority(p.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        priority === p.value
+                          ? 'chip-selected'
+                          : darkMode
+                            ? 'bg-slate-800 border-slate-700 text-slate-400'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className={sectionLabel}>Additional Context <span className="normal-case text-[10px]">(optional)</span></p>
+                <textarea
+                  value={context}
+                  onChange={e => setContext(e.target.value)}
+                  placeholder="Platform details, tech stack, special requirements…"
+                  rows={3}
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={generate}
+              disabled={loading || !modules.length}
+              className="w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 btn-generate disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading
+                ? <><Spinner size={18} /><span>Generating Test Cases…</span></>
+                : <><span>⚡</span><span>Generate Test Cases ({modules.length} module{modules.length !== 1 ? 's' : ''})</span></>
+              }
+            </button>
+
+            {genErr && (
+              <div className="rounded-lg px-4 py-3 text-sm bg-red-500/10 border border-red-500/30 text-red-400">✕ {genErr}</div>
+            )}
+
+            {loading && (
+              <div className="space-y-2">
+                {[1, 0.9, 0.75, 0.6].map((w, i) => (
+                  <div key={i} className={`h-4 rounded shimmer ${darkMode ? '' : 'shimmer-light'}`} style={{ width: `${w*100}%` }} />
+                ))}
+              </div>
+            )}
+
+            {output && !loading && (
+              <>
+                <TokenBadge usage={usage} model={usedModel} />
+                <MarkdownOutput content={output} filename="ecommerce-test-cases.md" darkMode={darkMode} />
+              </>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB NAV
+    ═══════════════════════════════════════════════════════════ */
+
+    const TabNav = ({ activeTab, setActiveTab, darkMode }) => {
+      const tabs = [
+        { id: 'testplan', icon: '🚀', label: 'Test Plan Generator',   sub: 'Jira → B.L.A.S.T Plan' },
+        { id: 'testcases',icon: '🛒', label: 'Test Case Generator',   sub: 'E-Commerce Modules' },
+      ];
+      return (
+        <div className={`flex gap-1 p-1 rounded-2xl mb-6 ${darkMode ? 'bg-slate-900/60 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-4 rounded-xl transition-all text-sm font-semibold ${
+                activeTab === t.id
+                  ? 'text-white shadow-lg'
+                  : darkMode
+                    ? 'text-slate-500 hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-700'
+              }`}
+              style={activeTab === t.id ? { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' } : {}}
+            >
+              <span className="text-lg sm:text-base">{t.icon}</span>
+              <div className="text-center sm:text-left">
+                <div>{t.label}</div>
+                <div className={`text-[10px] font-normal hidden sm:block ${activeTab === t.id ? 'text-indigo-200' : darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{t.sub}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      );
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       ROOT APP
+    ═══════════════════════════════════════════════════════════ */
+
+    const App = () => {
+      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('blast-theme') !== 'light');
+      const [settingsOpen, setSettingsOpen] = useState(false);
+      const [activeTab, setActiveTab] = useState('testplan');
+      const [toast, setToast] = useState(null);
+      const [envInfo, setEnvInfo] = useState(null);
+      const [settings, setSettings] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('blast-settings') || '{}'); }
+        catch { return {}; }
+      });
+
+      useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark');
+        else          document.documentElement.classList.remove('dark');
+        localStorage.setItem('blast-theme', darkMode ? 'dark' : 'light');
+      }, [darkMode]);
+
+      useEffect(() => {
+        fetch('/api/health').then(r => r.json()).then(d => setEnvInfo(d.env)).catch(() => {});
+      }, []);
+
+      const showToast = useCallback((message, type = 'info') => {
+        setToast({ message, type, id: Date.now() });
+      }, []);
+
+      return (
+        <div className={`min-h-screen ${darkMode ? 'dark' : 'light'}`}>
+          <Header darkMode={darkMode} toggleDark={() => setDarkMode(d => !d)} openSettings={() => setSettingsOpen(true)} />
+
+          <SettingsDrawer
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            settings={settings}
+            onSave={s => { setSettings(s); localStorage.setItem('blast-settings', JSON.stringify(s)); }}
+            showToast={showToast}
+            darkMode={darkMode}
+            envInfo={envInfo}
+          />
+
+          {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+          <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+            {/* Hero */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl sm:text-4xl font-black mb-2">
+                <span className="grad-text">B.L.A.S.T</span>
+                <span className={darkMode ? ' text-slate-100' : ' text-slate-900'}> Test Intelligence</span>
+              </h1>
+              <p className={`text-sm sm:text-base max-w-xl mx-auto ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Fetch a Jira issue and generate a full test plan — or build E-Commerce test cases — in seconds using AI.
+              </p>
+
+              {/* Env status dot */}
+              {envInfo && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <span className={`w-2 h-2 rounded-full ${
+                    envInfo.hasGroqKey && envInfo.hasJiraEmail ? 'bg-green-400' : 'bg-amber-400'
+                  }`} />
+                  <span className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {envInfo.hasGroqKey && envInfo.hasJiraEmail
+                      ? 'Server config loaded from .env'
+                      : 'Some credentials missing — open Settings'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <TabNav activeTab={activeTab} setActiveTab={setActiveTab} darkMode={darkMode} />
+
+            {activeTab === 'testplan'
+              ? <TestPlanTab  settings={settings} showToast={showToast} darkMode={darkMode} />
+              : <TestCaseTab  settings={settings} showToast={showToast} darkMode={darkMode} />
+            }
+          </main>
+
+          {/* Footer */}
+          <footer className={`text-center text-xs py-6 mt-8 border-t ${darkMode ? 'text-slate-700 border-slate-800' : 'text-slate-400 border-slate-200'}`}>
+            B.L.A.S.T Framework · Blueprint → Link → Architect → Stylize → Trigger · RICE-POT Prompt Engineering
+          </footer>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>

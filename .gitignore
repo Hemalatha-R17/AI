@@ -22,3 +22,7 @@ node_modules/
 
 # Local Claude config
 .claude/
+.env
+
+# Vercel
+.vercel/
