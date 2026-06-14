@@ -53,6 +53,7 @@ interface State {
   exportData: () => Promise<void>;
   exportCSV: () => void;
   importData: (json: string) => Promise<void>;
+  importCSV: (csvText: string) => Promise<{ added: number; skipped: number; errors: string[] }>;
   clearAllData: () => Promise<void>;
 
   // Resume library
@@ -306,6 +307,99 @@ export const useStore = create<State>((set, get) => ({
     } catch {
       get().addToast('Import failed — invalid JSON', 'error');
     }
+  },
+
+  importCSV: async (csvText) => {
+    const VALID_STATUSES: Status[] = ['Saved','Submitted','Phone Screen','Interview','Offer','Accepted','Rejected','Withdrawn'];
+    const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return { added: 0, skipped: 0, errors: ['CSV has no data rows'] };
+
+    // Parse a single CSV row handling quoted fields
+    const parseRow = (line: string): string[] => {
+      const result: string[] = [];
+      let cur = '';
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+        else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      result.push(cur.trim());
+      return result;
+    };
+
+    const headers = parseRow(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const col = (keys: string[]) => { for (const k of keys) { const i = headers.findIndex((h) => h.includes(k)); if (i >= 0) return i; } return -1; };
+    const idx = {
+      company:   col(['company']),
+      role:      col(['role','title','position','jobtitle']),
+      status:    col(['status']),
+      location:  col(['location']),
+      appliedDate: col(['applieddate','dateapplied','applied']),
+      source:    col(['source']),
+      url:       col(['url','link','joburl']),
+      notes:     col(['notes']),
+      priority:  col(['priority']),
+      tags:      col(['tags']),
+      salaryMin: col(['salarymin','minsalary']),
+      salaryMax: col(['salarymax','maxsalary']),
+    };
+
+    const added: Job[] = [];
+    const errors: string[] = [];
+    const existing = get().jobs;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cells = parseRow(lines[i]);
+      const company = idx.company >= 0 ? (cells[idx.company] || '').replace(/^"|"$/g,'').trim() : '';
+      const role    = idx.role    >= 0 ? (cells[idx.role]    || '').replace(/^"|"$/g,'').trim() : '';
+      if (!company || !role) { errors.push(`Row ${i}: missing company or role`); continue; }
+
+      const rawStatus = idx.status >= 0 ? (cells[idx.status] || '').trim() : '';
+      const status = VALID_STATUSES.find((s) => s.toLowerCase() === rawStatus.toLowerCase()) || 'Saved';
+
+      const rawMin = idx.salaryMin >= 0 ? parseInt(cells[idx.salaryMin] || '', 10) : NaN;
+      const rawMax = idx.salaryMax >= 0 ? parseInt(cells[idx.salaryMax] || '', 10) : NaN;
+
+      const dupe = existing.find(
+        (j) => j.company.toLowerCase() === company.toLowerCase() && j.role.toLowerCase() === role.toLowerCase()
+      );
+      if (dupe) { errors.push(`Row ${i}: "${role}" at ${company} already exists — skipped`); continue; }
+
+      const job: Job = {
+        id: `job-csv-${Date.now()}-${i}`,
+        createdAt: new Date().toISOString(),
+        company, role,
+        location:  idx.location  >= 0 ? (cells[idx.location]  || '') : '',
+        status:    status as Status,
+        priority:  (['High','Medium','Low'].includes(idx.priority >= 0 ? cells[idx.priority] : '') ? cells[idx.priority] as 'High'|'Medium'|'Low' : 'Medium'),
+        jobType:   'Full-time',
+        currency:  'USD',
+        salaryMin: isNaN(rawMin) ? null : rawMin,
+        salaryMax: isNaN(rawMax) ? null : rawMax,
+        tags:      idx.tags >= 0 && cells[idx.tags] ? cells[idx.tags].split(';').map((t) => t.trim()).filter(Boolean) : [],
+        source:    idx.source    >= 0 ? (cells[idx.source]    || '') : '',
+        appliedDate: idx.appliedDate >= 0 ? (cells[idx.appliedDate] || '') : '',
+        nextAction: '', followUpDate: '', interviewRound: '',
+        url:       idx.url   >= 0 ? (cells[idx.url]   || '') : '',
+        jdText:    '',
+        contactName: '', contactRole: '', contactEmail: '', contactPhone: '',
+        notes:     idx.notes >= 0 ? (cells[idx.notes] || '') : '',
+        history:   [{ status: status as Status, at: new Date().toISOString() }],
+        coverLetter: '',
+        resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
+      };
+      added.push(job);
+    }
+
+    for (const j of added) await dbSaveJob(j);
+    if (added.length) set((s) => ({ jobs: [...s.jobs, ...added] }));
+    get().addToast(
+      `Imported ${added.length} job${added.length !== 1 ? 's' : ''}${errors.length ? ` · ${errors.length} skipped` : ''}`,
+      added.length > 0 ? 'success' : 'error'
+    );
+    return { added: added.length, skipped: errors.length, errors };
   },
 
   clearAllData: async () => {

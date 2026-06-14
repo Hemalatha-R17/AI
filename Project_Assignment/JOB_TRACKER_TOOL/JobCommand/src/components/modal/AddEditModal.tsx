@@ -116,6 +116,7 @@ function F({ label, children, err }: { label: string; children: React.ReactNode;
 export function AddEditModal({ job, onClose }: Props) {
   const addJob    = useStore((s) => s.addJob);
   const updateJob = useStore((s) => s.updateJob);
+  const jobs      = useStore((s) => s.jobs);
   const isEdit    = !!job;
 
   const [form, setForm]     = useState(job ? { ...job } : { ...blank(), id: '', createdAt: '' });
@@ -185,6 +186,16 @@ export function AddEditModal({ job, onClose }: Props) {
         : job.history;
       await updateJob({ ...job, ...form, tags, history: historyEntry });
     } else {
+      const dupe = jobs.find(
+        (j) => j.company.trim().toLowerCase() === form.company.trim().toLowerCase() &&
+               j.role.trim().toLowerCase() === form.role.trim().toLowerCase()
+      );
+      if (dupe) {
+        const proceed = window.confirm(
+          `You already have a "${form.role}" application at ${form.company} (Status: ${dupe.status}).\n\nAdd anyway?`
+        );
+        if (!proceed) return;
+      }
       const newJob: Job = {
         ...form,
         id: `job-${Date.now()}`,

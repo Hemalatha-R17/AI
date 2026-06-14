@@ -97,6 +97,13 @@ function KCard({ job, onEdit, onDelete, onAI }: { job: Job; onEdit: () => void; 
         </div>
       )}
 
+      {/* JD badge */}
+      {job.jdText && (
+        <div style={{ fontSize: 9, fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: 'var(--color-accent)', borderRadius: 999, padding: '2px 6px', display: 'inline-block', marginBottom: 4 }}>
+          JD attached
+        </div>
+      )}
+
       {/* Actions */}
       {hovered && (
         <motion.div
@@ -105,7 +112,7 @@ function KCard({ job, onEdit, onDelete, onAI }: { job: Job; onEdit: () => void; 
           style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}
         >
           <button className="btn-icon" onClick={onEdit} title="Edit"><Pencil size={12} /></button>
-          <button className="btn-icon" onClick={onAI}   title="AI actions"><Sparkles size={12} style={{ color: '#a855f7' }} /></button>
+          <button className="btn-icon" onClick={onAI}   title="AI actions (uses JD if attached)"><Sparkles size={12} style={{ color: '#a855f7' }} /></button>
           <button className="btn-icon" onClick={onDelete} title="Delete" style={{ color: 'var(--color-danger)' }}><Trash2 size={12} /></button>
         </motion.div>
       )}
@@ -138,10 +145,11 @@ export function Pipeline() {
   }, [dragId, moveJob]);
 
   const aiAction = (job: Job, type: string) => {
+    const jdBlock = job.jdText ? `\n\nJob Description:\n${job.jdText.slice(0, 2000)}` : '';
     const prompts: Record<string, string> = {
-      followup: `Draft a professional follow-up email for my ${job.role} role at ${job.company}${job.contactName ? `. Contact: ${job.contactName}` : ''}. Keep it concise and polite.`,
-      cover:    `Write a compelling cover letter for the ${job.role} position at ${job.company}. Highlight enthusiasm, relevant skills, and cultural fit.`,
-      prep:     `Help me prepare for my ${job.role} interview at ${job.company}. Generate 10 likely interview questions with STAR method tips for each.`,
+      followup: `Draft a professional follow-up email for my ${job.role} role at ${job.company}${job.contactName ? `. Contact: ${job.contactName}` : ''}.${jdBlock}\n\nKeep it concise and polite.`,
+      cover:    `Write a compelling cover letter for the ${job.role} position at ${job.company}. Highlight enthusiasm, relevant skills, and cultural fit.${jdBlock}`,
+      prep:     `Help me prepare for my ${job.role} interview at ${job.company}. Generate 10 likely interview questions with STAR method tips for each.${jdBlock}`,
     };
     setPrompt(prompts[type] || '');
     setAI(true);

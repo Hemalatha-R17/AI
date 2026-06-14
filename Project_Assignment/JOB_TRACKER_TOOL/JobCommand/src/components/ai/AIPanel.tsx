@@ -105,6 +105,11 @@ export function AIPanel() {
         <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <Sparkles size={16} style={{ color: 'var(--color-accent)' }} />
           <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text)', flex: 1 }}>AI Assistant</span>
+          {input.includes('Job Description:') && (
+            <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)', borderRadius: 999, padding: '2px 8px', flexShrink: 0 }}>
+              JD Loaded ✓
+            </span>
+          )}
 
           {/* Provider selector */}
           {connectedProviders.length > 0 && (

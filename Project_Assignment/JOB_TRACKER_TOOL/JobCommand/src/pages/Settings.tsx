@@ -13,10 +13,14 @@ export function Settings() {
   const exportData      = useStore((s) => s.exportData);
   const exportCSV       = useStore((s) => s.exportCSV);
   const importData      = useStore((s) => s.importData);
+  const importCSV       = useStore((s) => s.importCSV);
   const clearAll        = useStore((s) => s.clearAllData);
   const saveProvider    = useStore((s) => s.saveProvider);
   const activeProviders = useStore((s) => s.activeProviders);
   const addToast        = useStore((s) => s.addToast);
+
+  const [csvPreview, setCsvPreview] = useState<{ text: string; rows: { company: string; role: string; status: string }[] } | null>(null);
+  const [csvImporting, setCsvImporting] = useState(false);
 
   const [goal, setGoal]         = useState(String(profile.monthlyGoal));
   const [currency, setCurrency] = useState<Currency>(profile.defaultCurrency);
@@ -100,6 +104,41 @@ export function Settings() {
     reader.readAsText(file);
   };
 
+  const handleCSVPreview = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      const headers = lines[0]?.split(',').map((h) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || [];
+      const col = (keys: string[]) => { for (const k of keys) { const i = headers.findIndex((h) => h.includes(k)); if (i >= 0) return i; } return -1; };
+      const ci = col(['company']), ri = col(['role','title','position']), si = col(['status']);
+      const rows = lines.slice(1, 6).map((line) => {
+        const cells = line.split(',');
+        return {
+          company: (cells[ci] || '').replace(/"/g, '').trim(),
+          role:    (cells[ri] || '').replace(/"/g, '').trim(),
+          status:  (cells[si] || '').replace(/"/g, '').trim() || 'Saved',
+        };
+      }).filter((r) => r.company && r.role);
+      setCsvPreview({ text, rows });
+    };
+    reader.readAsText(file);
+  };
+
+  const confirmCSVImport = async () => {
+    if (!csvPreview) return;
+    setCsvImporting(true);
+    try {
+      await importCSV(csvPreview.text);
+    } finally {
+      setCsvImporting(false);
+      setCsvPreview(null);
+    }
+  };
+
   const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--color-text-dim)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 };
   const rowStyle:   React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 };
 
@@ -138,9 +177,48 @@ export function Settings() {
             <label style={{ cursor: 'pointer', textTransform: 'none', fontSize: 13, marginBottom: 0 }}>
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
               <div className="btn btn-ghost" style={{ display: 'inline-flex', width: '100%', justifyContent: 'center' }}>
-                <Upload size={13} /> Import Backup
+                <Upload size={13} /> Restore JSON Backup
               </div>
             </label>
+            <label style={{ cursor: 'pointer', textTransform: 'none', fontSize: 13, marginBottom: 0 }}>
+              <input type="file" accept=".csv" onChange={handleCSVPreview} style={{ display: 'none' }} />
+              <div className="btn btn-ghost" style={{ display: 'inline-flex', width: '100%', justifyContent: 'center' }}>
+                <Upload size={13} /> Import from CSV
+              </div>
+            </label>
+            {csvPreview && (
+              <div style={{ marginTop: 4, padding: '12px 14px', background: 'var(--color-surface-2)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>
+                  Preview (first {csvPreview.rows.length} rows):
+                </div>
+                <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse', marginBottom: 10 }}>
+                  <thead>
+                    <tr>
+                      {['Company','Role','Status'].map((h) => (
+                        <th key={h} style={{ textAlign: 'left', padding: '2px 6px', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: 9 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.rows.map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: '3px 6px', color: 'var(--color-text)' }}>{r.company}</td>
+                        <td style={{ padding: '3px 6px', color: 'var(--color-text-dim)' }}>{r.role}</td>
+                        <td style={{ padding: '3px 6px', color: 'var(--color-muted)' }}>{r.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 12px' }} onClick={confirmCSVImport} disabled={csvImporting}>
+                    {csvImporting ? 'Importing…' : 'Confirm Import'}
+                  </button>
+                  <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => setCsvPreview(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             <button
               className="btn"
               style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.3)' }}

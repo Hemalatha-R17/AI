@@ -50,6 +50,34 @@ export function Analytics() {
     }).sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1));
   }, [jobs]);
 
+  // Advanced metrics
+  const avgDaysToOffer = useMemo(() => {
+    const durations: number[] = [];
+    for (const j of jobs) {
+      if (!j.history || j.history.length < 2) continue;
+      const submitted = j.history.find((h) => h.status === 'Submitted');
+      const offered   = j.history.find((h) => h.status === 'Offer');
+      if (!submitted || !offered) continue;
+      const days = Math.round((new Date(offered.at).getTime() - new Date(submitted.at).getTime()) / 86400000);
+      if (days >= 0) durations.push(days);
+    }
+    return durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
+  }, [jobs]);
+
+  const responseRate = useMemo(() => {
+    const applied = jobs.filter((j) => j.status !== 'Saved');
+    if (!applied.length) return null;
+    const responded = applied.filter((j) => STATUS_ORDER[j.status] > STATUS_ORDER['Submitted']);
+    return Math.round((responded.length / applied.length) * 100);
+  }, [jobs]);
+
+  const offerAcceptanceRate = useMemo(() => {
+    const withOffer = jobs.filter((j) => j.history?.some((h) => h.status === 'Offer'));
+    if (!withOffer.length) return null;
+    const accepted = withOffer.filter((j) => j.status === 'Accepted').length;
+    return Math.round((accepted / withOffer.length) * 100);
+  }, [jobs]);
+
   // Salary distribution
   const salaryData = useMemo(() => {
     const buckets: Record<string, number> = { '<50k': 0, '50-100k': 0, '100-150k': 0, '150-200k': 0, '200k+': 0 };
@@ -73,6 +101,37 @@ export function Analytics() {
 
   return (
     <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
+
+      {/* Advanced metric stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+        {[
+          {
+            label: 'Avg. Days to Offer',
+            value: avgDaysToOffer !== null ? `${avgDaysToOffer}d` : '—',
+            sub: avgDaysToOffer !== null ? 'from Submitted → Offer' : 'No offer data yet',
+            color: '#10b981',
+          },
+          {
+            label: 'Response Rate',
+            value: responseRate !== null ? `${responseRate}%` : '—',
+            sub: responseRate !== null ? 'of submitted got a response' : 'No submissions yet',
+            color: '#2563eb',
+          },
+          {
+            label: 'Offer Acceptance Rate',
+            value: offerAcceptanceRate !== null ? `${offerAcceptanceRate}%` : '—',
+            sub: offerAcceptanceRate !== null ? 'of offers accepted' : 'No offers yet',
+            color: '#f59e0b',
+          },
+        ].map((stat) => (
+          <div key={stat.label} className="card" style={{ textAlign: 'center', padding: '18px 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{stat.label}</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 6 }}>{stat.sub}</div>
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
         {/* Conversion funnel */}
