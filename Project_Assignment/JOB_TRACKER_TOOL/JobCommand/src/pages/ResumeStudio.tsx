@@ -12,6 +12,7 @@ export function ResumeStudio() {
   const addResume     = useStore((s) => s.addResume);
   const updateResume  = useStore((s) => s.updateResume);
   const deleteResume  = useStore((s) => s.deleteResume);
+  const addToast      = useStore((s) => s.addToast);
 
   const [tab, setTab]   = useState<'resumes' | 'analyzer' | 'skills'>('resumes');
   const [jd, setJd]     = useState('');
@@ -106,7 +107,10 @@ Provide:
     setAI(true);
   };
 
-  const saveSkills = () => updateProfile({ skillProfile: skills });
+  const saveSkills = () => {
+    updateProfile({ skillProfile: skills });
+    addToast('Skill profile saved', 'success');
+  };
 
   return (
     <div style={{ padding: 24, flex: 1, overflow: 'auto' }}>
