@@ -21,6 +21,16 @@ const blank = (): Omit<Job, 'id' | 'createdAt' | 'history'> => ({
   coverLetter: '',
 });
 
+function F({ label, children, err }: { label: string; children: React.ReactNode; err?: string }) {
+  return (
+    <div className="form-group">
+      <label>{label}</label>
+      {children}
+      {err && <span className="field-err">{err}</span>}
+    </div>
+  );
+}
+
 export function AddEditModal({ job, onClose }: Props) {
   const addJob    = useStore((s) => s.addJob);
   const updateJob = useStore((s) => s.updateJob);
@@ -89,14 +99,6 @@ export function AddEditModal({ job, onClose }: Props) {
     }
     onClose();
   };
-
-  const F = ({ label, children, err }: { label: string; children: React.ReactNode; err?: string }) => (
-    <div className="form-group">
-      <label>{label}</label>
-      {children}
-      {err && <span className="field-err">{err}</span>}
-    </div>
-  );
 
   return (
     <AnimatePresence>
