@@ -18,6 +18,7 @@ export function JobDiscovery() {
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [tab, setTab] = useState<'bookmarks' | 'parser'>('bookmarks');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const addBookmark = () => {
     if (!company.trim() || !role.trim()) return;
@@ -73,22 +74,43 @@ ${jdText}`);
   };
 
   const aiSearch = () => {
-    setPrompt('Help me find relevant job postings. I am looking for senior frontend engineering roles (React/TypeScript) with remote options. Suggest 5 specific companies that would be a great fit and why.');
+    let prompt: string;
+    if (jdText.trim()) {
+      prompt = `Based on the following job description, suggest 5 similar roles and companies I should target. For each suggestion include: company name, role title, why it's a good fit, and where to find the job posting.
+
+Job Description:
+${jdText}`;
+    } else if (searchQuery.trim()) {
+      prompt = `Help me find relevant job postings. I am looking for: ${searchQuery}. Suggest 5 specific companies that would be a great fit, the exact role title to search for, and why each is a match.`;
+    } else {
+      prompt = `Help me discover relevant job opportunities. Ask me what kind of role, location, and experience level I am targeting, then suggest 5 specific companies and job titles I should apply to.`;
+    }
+    setPrompt(prompt);
     setAI(true);
   };
 
   return (
     <div style={{ padding: 24, flex: 1, overflow: 'auto' }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
         <button className={`btn ${tab === 'bookmarks' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('bookmarks')}>
           <Bookmark size={13} /> Bookmarked Roles
         </button>
         <button className={`btn ${tab === 'parser' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('parser')}>
           <Sparkles size={13} /> JD Parser
         </button>
-        <button className="btn btn-ghost" onClick={aiSearch}>
-          <Search size={13} /> AI Job Search
-        </button>
+        <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 220 }}>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && aiSearch()}
+            placeholder={jdText.trim() ? 'JD pasted — click to search from it' : 'e.g. QA Automation Engineer, remote…'}
+            disabled={!!jdText.trim()}
+            style={{ flex: 1, fontSize: 12, opacity: jdText.trim() ? 0.6 : 1 }}
+          />
+          <button className="btn btn-ghost" onClick={aiSearch}>
+            <Search size={13} /> AI Job Search
+          </button>
+        </div>
       </div>
 
       {tab === 'bookmarks' && (
