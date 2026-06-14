@@ -54,6 +54,7 @@ export function JobDiscovery() {
       notes: bk.notes,
       history: [{ status: 'Submitted', at: new Date().toISOString() }],
       coverLetter: '',
+      resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
     };
     await addJob(job);
     setBookmarks((bs) => bs.filter((b) => b.id !== bk.id));

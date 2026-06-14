@@ -60,8 +60,8 @@ function ResumePickerSection({ form, set, readResume }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--color-surface-2)', borderRadius: 8, padding: '10px 14px', border: '1px solid var(--color-border)' }}>
           <Paperclip size={14} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{form.resumeName as string}</div>
-            {form.resumeUpdatedAt && <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Uploaded {new Date(form.resumeUpdatedAt as string).toLocaleDateString()}</div>}
+            <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(form.resumeName)}</div>
+            {form.resumeUpdatedAt && <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Uploaded {new Date(String(form.resumeUpdatedAt)).toLocaleDateString()}</div>}
           </div>
           <button className="btn-icon" title="Download" onClick={download}><Download size={14} /></button>
           <button className="btn-icon" title="Remove" onClick={clear} style={{ color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
