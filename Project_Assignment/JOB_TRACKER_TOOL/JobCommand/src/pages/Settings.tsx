@@ -231,7 +231,7 @@ export function Settings() {
                     <div className="form-group" key={field} style={{ marginBottom: 6 }}>
                       <label style={{ fontSize: 10 }}>{label}</label>
                       <input
-                        value={(notif as Record<string, string>)[field] || ''}
+                        value={(notif as unknown as Record<string, string>)[field] || ''}
                         onChange={(e) => setN(field as keyof NotifSettings, e.target.value)}
                         placeholder={ph}
                         style={{ fontSize: 11 }}
