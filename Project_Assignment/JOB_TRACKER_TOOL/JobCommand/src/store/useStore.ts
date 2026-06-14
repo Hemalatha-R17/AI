@@ -49,6 +49,8 @@ interface State {
   setSelectedProvider: (id: string) => void;
 
   setThemeStudioOpen: (open: boolean) => void;
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
 
   exportData: () => Promise<void>;
   exportCSV: () => void;
@@ -78,6 +80,7 @@ export const useStore = create<State>((set, get) => ({
   activeProviders: {},
   selectedProvider: '',
   themeStudioOpen: false,
+  mobileSidebarOpen: false,
 
   hydrate: async () => {
     try {
@@ -249,6 +252,7 @@ export const useStore = create<State>((set, get) => ({
   setSelectedProvider: (id) => set({ selectedProvider: id }),
 
   setThemeStudioOpen: (open) => set({ themeStudioOpen: open }),
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
 
   exportData: async () => {
     const jobs = get().jobs;

@@ -1,4 +1,4 @@
-import { Sparkles, Palette, Plus } from 'lucide-react';
+import { Sparkles, Palette, Plus, Menu } from 'lucide-react';
 import { useStore, useView } from '../../store/useStore';
 import { useState } from 'react';
 import { AddEditModal } from '../modal/AddEditModal';
@@ -17,9 +17,10 @@ const VIEW_LABELS: Record<string, string> = {
 };
 
 export function Header() {
-  const view    = useView();
-  const openAI  = useStore((s) => s.setAiPanelOpen);
-  const openTS  = useStore((s) => s.setThemeStudioOpen);
+  const view          = useView();
+  const openAI        = useStore((s) => s.setAiPanelOpen);
+  const openTS        = useStore((s) => s.setThemeStudioOpen);
+  const setMobileOpen = useStore((s) => s.setMobileSidebarOpen);
   const [showModal, setShowModal] = useState(false);
 
   return (
@@ -31,25 +32,34 @@ export function Header() {
         borderBottom: '1px solid var(--color-border)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
-        gap: 12,
+        padding: '0 16px',
+        gap: 10,
       }}>
-        <h1 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text)', flex: 1 }}>
+        {/* Hamburger — mobile only */}
+        <button
+          className="btn-icon hamburger-btn"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        <h1 style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {VIEW_LABELS[view] || view}
         </h1>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button
-            className="btn btn-ghost"
+            className="btn btn-ghost header-ai-btn"
             onClick={() => openAI(true)}
             title="AI Assistant"
             style={{ padding: '6px 10px' }}
           >
             <Sparkles size={14} />
-            <span>AI</span>
+            <span className="header-btn-label">AI</span>
           </button>
           <button
-            className="btn btn-ghost"
+            className="btn btn-ghost header-theme-btn"
             onClick={() => openTS(true)}
             title="Theme Studio"
             style={{ padding: '6px 10px' }}
@@ -59,9 +69,10 @@ export function Header() {
           <button
             className="btn btn-primary"
             onClick={() => setShowModal(true)}
+            style={{ padding: '6px 12px' }}
           >
             <Plus size={14} />
-            Add Application
+            <span className="header-btn-label">Add Application</span>
           </button>
         </div>
       </header>

@@ -564,3 +564,141 @@ label {
   pointer-events: none;
   z-index: 9999;
 }
+
+/* ── Sidebar (desktop baseline) ──────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  overflow-y: auto;
+  transition: transform 0.25s ease;
+}
+.sidebar-backdrop { display: none; }
+.mobile-menu-close { display: none !important; }
+.hamburger-btn { display: none !important; }
+
+/* ── Bottom nav (desktop: hidden) ────────────────── */
+.bottom-nav { display: none; }
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: var(--font-sans);
+  transition: color 0.15s;
+  min-width: 52px;
+}
+.bottom-nav-btn.active { color: var(--color-accent); }
+.bottom-nav-btn.add-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.5);
+  padding: 0;
+  min-width: unset;
+  font-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Mobile (≤ 768px) ────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Sidebar becomes an off-canvas drawer */
+  .sidebar {
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    z-index: 300;
+    width: 260px;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.5);
+    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Backdrop behind open sidebar */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 299;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Show close X inside sidebar */
+  .mobile-menu-close { display: inline-flex !important; }
+
+  /* Show hamburger in header */
+  .hamburger-btn { display: inline-flex !important; }
+
+  /* Hide long button label on small screens */
+  .header-btn-label { display: none; }
+
+  /* Hide theme button from header (accessible via sidebar) */
+  .header-theme-btn { display: none !important; }
+
+  /* Bottom nav visible on mobile */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: 6px 0 max(10px, env(safe-area-inset-bottom));
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.35);
+  }
+
+  /* Push page content above bottom nav */
+  main { padding-bottom: 68px; }
+
+  /* Toasts above bottom nav */
+  .toast-stack {
+    bottom: 80px;
+    right: 12px;
+    left: 12px;
+    align-items: flex-end;
+  }
+  .toast { min-width: unset; width: 100%; }
+
+  /* AI panel full-screen on mobile */
+  .ai-panel {
+    width: 100vw !important;
+    left: 0 !important;
+  }
+
+  /* Modal full-screen on small phones */
+  .modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .modal-backdrop { align-items: flex-end; padding: 0; }
+
+  /* Reduce page padding */
+  .card { padding: 14px; }
+
+  /* Kanban: allow horizontal scroll with snap */
+  .kboard { padding: 4px 12px; scroll-snap-type: x mandatory; }
+  .kcol { scroll-snap-align: start; flex: 0 0 82vw; }
+
+  /* Grid → single column on mobile */
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+}

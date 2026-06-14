@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity } from 'lucide-react';
+import {
+  Activity, LayoutDashboard, Kanban, Search, Settings as SettingsIcon, Plus,
+} from 'lucide-react';
 import { useStore, useView, useHydrated } from './store/useStore';
 import { Landing }       from './pages/Landing';
 import { Dashboard }     from './pages/Dashboard';
@@ -18,6 +20,8 @@ import { Header }        from './components/layout/Header';
 import { ToastStack }    from './components/layout/Toast';
 import { AIPanel }       from './components/ai/AIPanel';
 import { ThemeStudio }   from './components/theme/ThemeStudio';
+import { AddEditModal }  from './components/modal/AddEditModal';
+import type { View }     from './types';
 import './index.css';
 
 const PAGES: Record<string, React.ComponentType> = {
@@ -33,11 +37,60 @@ const PAGES: Record<string, React.ComponentType> = {
   settings:    Settings,
 };
 
+const BOTTOM_NAV = [
+  { id: 'dashboard' as View, icon: LayoutDashboard, label: 'Home'     },
+  { id: 'pipeline'  as View, icon: Kanban,          label: 'Pipeline' },
+  { id: 'discovery' as View, icon: Search,           label: 'Jobs'     },
+  { id: 'settings'  as View, icon: SettingsIcon,     label: 'Settings' },
+];
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return mobile;
+}
+
+function BottomNav({ onAdd }: { onAdd: () => void }) {
+  const view    = useView();
+  const setView = useStore((s) => s.setView);
+  return (
+    <nav className="bottom-nav">
+      {BOTTOM_NAV.slice(0, 2).map(({ id, icon: Icon, label }) => (
+        <button
+          key={id}
+          className={`bottom-nav-btn${view === id ? ' active' : ''}`}
+          onClick={() => setView(id)}
+        >
+          <Icon size={22} />
+          <span>{label}</span>
+        </button>
+      ))}
+      <button className="bottom-nav-btn add-btn" onClick={onAdd} aria-label="Add application">
+        <Plus size={24} />
+      </button>
+      {BOTTOM_NAV.slice(2).map(({ id, icon: Icon, label }) => (
+        <button
+          key={id}
+          className={`bottom-nav-btn${view === id ? ' active' : ''}`}
+          onClick={() => setView(id)}
+        >
+          <Icon size={22} />
+          <span>{label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function Skeleton() {
   return (
     <div style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-        {[1,2,3,4,5].map((i) => <div key={i} className="skeleton" style={{ height: 90 }} />)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[1,2,3,4].map((i) => <div key={i} className="skeleton" style={{ height: 90 }} />)}
       </div>
       {[1,2].map((i) => <div key={i} className="skeleton" style={{ height: 200 }} />)}
     </div>
@@ -99,16 +152,16 @@ export default function App() {
   const hydrated = useHydrated();
   const view     = useView();
   const aiOpen   = useStore((s) => s.aiPanelOpen);
-  const [loggedIn, setLoggedIn]     = useState(false);
-  const [welcomeName, setWelcomeName] = useState('');
-  const [showWelcome, setShowWelcome] = useState(false);
+  const isMobile = useIsMobile();
+
+  const [loggedIn,     setLoggedIn]     = useState(false);
+  const [welcomeName,  setWelcomeName]  = useState('');
+  const [showWelcome,  setShowWelcome]  = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => { hydrate(); }, []);
 
-  const handleLogin = (name: string) => {
-    setWelcomeName(name);
-    setShowWelcome(true);
-  };
+  const handleLogin = (name: string) => { setWelcomeName(name); setShowWelcome(true); };
 
   if (!loggedIn && !showWelcome) return <Landing onLogin={handleLogin} />;
 
@@ -124,14 +177,16 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
       <Sidebar />
+
       <div
         style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          marginRight: aiOpen ? 380 : 0,
+          marginRight: aiOpen && !isMobile ? 520 : 0,
           transition: 'margin-right 0.3s cubic-bezier(0.16,1,0.3,1)',
         }}
       >
@@ -153,9 +208,12 @@ export default function App() {
           )}
         </main>
       </div>
+
       <AIPanel />
       <ThemeStudio />
       <ToastStack />
+      <BottomNav onAdd={() => setShowAddModal(true)} />
+      {showAddModal && <AddEditModal onClose={() => setShowAddModal(false)} />}
     </div>
   );
 }
