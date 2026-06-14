@@ -30,6 +30,7 @@ export function AIPanel() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const panelRef  = useRef<HTMLDivElement>(null);
 
   const latestJob = jobs[0];
 
@@ -38,6 +39,17 @@ export function AIPanel() {
   }, [initPrompt, setInitPrompt]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open, setOpen]);
 
   const connectedProviders = AI_PROVIDERS.filter((p) => activeProviders[p.id as string]?.apiKey);
   const providerDef = connectedProviders.find((p) => p.id === selectedProvider) || connectedProviders[0];
@@ -82,6 +94,7 @@ export function AIPanel() {
   return (
     <AnimatePresence>
       <motion.div
+        ref={panelRef}
         className="ai-panel slide-in"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
