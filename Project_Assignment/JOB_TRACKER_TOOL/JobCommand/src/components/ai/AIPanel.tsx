@@ -108,20 +108,20 @@ export function AIPanel() {
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {messages.length === 0 ? (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, color: 'var(--color-muted)', marginBottom: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--color-muted)', marginBottom: 14 }}>
                 {connectedProviders.length === 0
                   ? '⚠️ No AI provider connected — add an API key in Settings.'
                   : `Connected: ${provider?.label}. Try a prompt:`}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {seedPrompts.map((p, i) => (
                   <button
                     key={i}
                     className="btn btn-ghost"
-                    style={{ textAlign: 'left', justifyContent: 'flex-start', fontSize: 12, padding: '8px 12px', lineHeight: 1.4 }}
+                    style={{ textAlign: 'left', justifyContent: 'flex-start', fontSize: 13, padding: '10px 14px', lineHeight: 1.5 }}
                     onClick={() => send(p)}
                   >
                     {p}
@@ -133,13 +133,13 @@ export function AIPanel() {
             messages.map((m, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
-                  maxWidth: '85%',
-                  padding: '10px 14px',
-                  borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                  maxWidth: '92%',
+                  padding: '12px 16px',
+                  borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                   background: m.role === 'user' ? 'var(--color-accent)' : 'var(--color-surface-2)',
                   color: m.role === 'user' ? '#fff' : 'var(--color-text)',
-                  fontSize: 13,
-                  lineHeight: 1.6,
+                  fontSize: 14,
+                  lineHeight: 1.7,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                 }}>
@@ -149,13 +149,13 @@ export function AIPanel() {
             ))
           )}
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-muted)', fontSize: 12 }}>
-              <Loader size={13} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-muted)', fontSize: 13 }}>
+              <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
               Thinking…
             </div>
           )}
           {error && (
-            <div style={{ fontSize: 12, color: 'var(--color-danger)', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 6 }}>
+            <div style={{ fontSize: 13, color: 'var(--color-danger)', padding: '10px 14px', background: 'rgba(239,68,68,0.1)', borderRadius: 6 }}>
               {error}
             </div>
           )}
@@ -163,22 +163,22 @@ export function AIPanel() {
         </div>
 
         {/* Input */}
-        <div style={{ padding: '12px 14px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Ask anything… (Enter to send, Shift+Enter for newline)"
-            rows={2}
-            style={{ flex: 1, resize: 'none', fontSize: 12, lineHeight: 1.5 }}
+            rows={3}
+            style={{ flex: 1, resize: 'none', fontSize: 14, lineHeight: 1.6 }}
           />
           <button
             className="btn btn-primary"
-            style={{ padding: '10px 12px', alignSelf: 'flex-end' }}
+            style={{ padding: '12px 14px', alignSelf: 'flex-end' }}
             onClick={() => send()}
             disabled={!input.trim() || loading}
           >
-            <Send size={13} />
+            <Send size={15} />
           </button>
         </div>
       </motion.div>
