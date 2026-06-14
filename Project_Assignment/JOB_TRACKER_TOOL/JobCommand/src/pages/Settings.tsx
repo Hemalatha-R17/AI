@@ -11,6 +11,7 @@ export function Settings() {
   const profile         = useProfile();
   const updateProfile   = useStore((s) => s.updateProfile);
   const exportData      = useStore((s) => s.exportData);
+  const exportCSV       = useStore((s) => s.exportCSV);
   const importData      = useStore((s) => s.importData);
   const clearAll        = useStore((s) => s.clearAllData);
   const saveProvider    = useStore((s) => s.saveProvider);
@@ -128,8 +129,11 @@ export function Settings() {
         <div className="card">
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 16 }}>Data & Backup</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="btn btn-primary" onClick={exportCSV}>
+              <Download size={13} /> Export as CSV (Excel / Sheets)
+            </button>
             <button className="btn btn-ghost" onClick={exportData}>
-              <Download size={13} /> Export Backup (.json)
+              <Download size={13} /> Export Full Backup (.json)
             </button>
             <label style={{ cursor: 'pointer', textTransform: 'none', fontSize: 13, marginBottom: 0 }}>
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />

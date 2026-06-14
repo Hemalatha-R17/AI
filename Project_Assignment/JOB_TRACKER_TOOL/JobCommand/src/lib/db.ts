@@ -1,21 +1,27 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Job, UserProfile } from '../types';
+import type { Job, UserProfile, ResumeEntry } from '../types';
 
 interface AppDB extends DBSchema {
   jobs:     { key: string; value: Job };
   profiles: { key: string; value: UserProfile };
   settings: { key: string; value: { id: string; data: string } };
+  resumes:  { key: string; value: ResumeEntry };
 }
 
 let _db: IDBPDatabase<AppDB> | null = null;
 
 async function getDb(): Promise<IDBPDatabase<AppDB>> {
   if (_db) return _db;
-  _db = await openDB<AppDB>('jobcommand-v1', 1, {
-    upgrade(db) {
-      db.createObjectStore('jobs',     { keyPath: 'id' });
-      db.createObjectStore('profiles', { keyPath: 'id' });
-      db.createObjectStore('settings', { keyPath: 'id' });
+  _db = await openDB<AppDB>('jobcommand-v1', 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore('jobs',     { keyPath: 'id' });
+        db.createObjectStore('profiles', { keyPath: 'id' });
+        db.createObjectStore('settings', { keyPath: 'id' });
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore('resumes', { keyPath: 'id' });
+      }
     },
   });
   return _db;
@@ -55,6 +61,21 @@ export async function dbGetSetting(id: string): Promise<string | null> {
 export async function dbSetSetting(id: string, data: string): Promise<void> {
   const db = await getDb();
   await db.put('settings', { id, data });
+}
+
+export async function dbGetResumes(): Promise<ResumeEntry[]> {
+  const db = await getDb();
+  return db.getAll('resumes');
+}
+
+export async function dbSaveResume(r: ResumeEntry): Promise<void> {
+  const db = await getDb();
+  await db.put('resumes', r);
+}
+
+export async function dbDeleteResume(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('resumes', id);
 }
 
 export async function dbClear(): Promise<void> {

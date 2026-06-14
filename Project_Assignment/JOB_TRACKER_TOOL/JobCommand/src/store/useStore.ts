@@ -1,14 +1,16 @@
 import { create } from 'zustand';
-import type { Job, UserProfile, Toast, View, Status, AIProvider } from '../types';
+import type { Job, UserProfile, Toast, View, Status, AIProvider, ResumeEntry } from '../types';
 import {
   dbGetJobs, dbSaveJob, dbDeleteJob,
   dbGetProfiles, dbSaveProfile, dbGetSetting, dbSetSetting,
+  dbGetResumes, dbSaveResume, dbDeleteResume,
 } from '../lib/db';
 import { SEED_JOBS, DEFAULT_PROFILE } from '../data/seed';
 
 interface State {
   // Data
   jobs: Job[];
+  resumes: ResumeEntry[];
   profile: UserProfile;
   activeProfileId: string | null;
   profiles: UserProfile[];
@@ -49,14 +51,21 @@ interface State {
   setThemeStudioOpen: (open: boolean) => void;
 
   exportData: () => Promise<void>;
+  exportCSV: () => void;
   importData: (json: string) => Promise<void>;
   clearAllData: () => Promise<void>;
+
+  // Resume library
+  addResume: (r: ResumeEntry) => Promise<void>;
+  updateResume: (r: ResumeEntry) => Promise<void>;
+  deleteResume: (id: string) => Promise<void>;
 }
 
 let toastId = 0;
 
 export const useStore = create<State>((set, get) => ({
   jobs: [],
+  resumes: [],
   profile: DEFAULT_PROFILE,
   activeProfileId: null,
   profiles: [],
@@ -83,7 +92,8 @@ export const useStore = create<State>((set, get) => ({
       } else {
         profile = profiles[0];
       }
-      set({ jobs, profile, profiles, hydrated: true, activeProfileId: profile.id });
+      const resumes = await dbGetResumes();
+      set({ jobs, profile, profiles, resumes, hydrated: true, activeProfileId: profile.id });
       await get().loadProviders();
 
       // Run notification alerts once per day
@@ -251,6 +261,42 @@ export const useStore = create<State>((set, get) => ({
     get().addToast('Data exported', 'success');
   },
 
+  exportCSV: () => {
+    const jobs = get().jobs;
+    const headers = [
+      'Company', 'Role', 'Status', 'Location', 'Priority', 'Job Type',
+      'Currency', 'Salary Min', 'Salary Max', 'Tags',
+      'Source', 'Applied Date', 'Next Action', 'Follow-up Date', 'Interview Round',
+      'Job URL', 'Contact Name', 'Contact Role', 'Contact Email', 'Contact Phone',
+      'Notes', 'Cover Letter', 'Resume File', 'Resume Uploaded', 'Created At',
+    ];
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = jobs.map((j) => [
+      j.company, j.role, j.status, j.location, j.priority, j.jobType,
+      j.currency, j.salaryMin ?? '', j.salaryMax ?? '', (j.tags || []).join('; '),
+      j.source, j.appliedDate, j.nextAction, j.followUpDate, j.interviewRound,
+      j.url, j.contactName, j.contactRole, j.contactEmail, j.contactPhone,
+      j.notes ? 'Yes' : 'No',
+      j.coverLetter ? 'Yes' : 'No',
+      j.resumeName || '',
+      j.resumeUpdatedAt ? new Date(j.resumeUpdatedAt).toLocaleDateString() : '',
+      j.createdAt ? new Date(j.createdAt).toLocaleDateString() : '',
+    ].map(esc).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `careerpulse-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    get().addToast('CSV exported', 'success');
+  },
+
   importData: async (json) => {
     try {
       const { jobs } = JSON.parse(json) as { jobs: Job[] };
@@ -267,6 +313,24 @@ export const useStore = create<State>((set, get) => ({
     await dbClear();
     set({ jobs: [] });
     get().addToast('All data cleared', 'info');
+  },
+
+  addResume: async (r) => {
+    await dbSaveResume(r);
+    set((s) => ({ resumes: [...s.resumes, r] }));
+    get().addToast(`Resume "${r.label}" saved`, 'success');
+  },
+
+  updateResume: async (r) => {
+    await dbSaveResume(r);
+    set((s) => ({ resumes: s.resumes.map((x) => x.id === r.id ? r : x) }));
+    get().addToast('Resume updated', 'success');
+  },
+
+  deleteResume: async (id) => {
+    await dbDeleteResume(id);
+    set((s) => ({ resumes: s.resumes.filter((x) => x.id !== id) }));
+    get().addToast('Resume deleted', 'info');
   },
 }));
 

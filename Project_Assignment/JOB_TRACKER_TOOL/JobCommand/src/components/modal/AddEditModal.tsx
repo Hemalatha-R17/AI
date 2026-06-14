@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, Copy, Check, FileText } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Copy, Check, FileText, Paperclip, Download, Trash2, Library } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import type { Job, Status, Priority, JobType, Currency } from '../../types';
 import { STATUSES, PRIORITIES, JOB_TYPES, CURRENCIES, SOURCES, CONTACT_ROLES, INTERVIEW_ROUNDS } from '../../lib/constants';
@@ -19,7 +19,89 @@ const blank = (): Omit<Job, 'id' | 'createdAt' | 'history'> => ({
   url: '', jdText: '',
   contactName: '', contactRole: '', contactEmail: '', contactPhone: '', notes: '',
   coverLetter: '',
+  resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
 });
+
+function ResumePickerSection({ form, set, readResume }: {
+  form: Record<string, unknown>;
+  set: (field: string, value: unknown) => void;
+  readResume: (file: File) => void;
+}) {
+  const resumes = useStore((s) => s.resumes);
+
+  const attachFromLibrary = (id: string) => {
+    const r = resumes.find((x) => x.id === id);
+    if (!r) return;
+    set('resumeName', r.label + (r.fileName.match(/\.[^.]+$/) ? r.fileName.match(/\.[^.]+$/)?.[0] : ''));
+    set('resumeData', r.data);
+    set('resumeType', r.type);
+    set('resumeUpdatedAt', r.updatedAt);
+  };
+
+  const clear = () => {
+    set('resumeName', ''); set('resumeData', ''); set('resumeType', ''); set('resumeUpdatedAt', '');
+  };
+
+  const download = () => {
+    const a = document.createElement('a');
+    a.href = `data:${form.resumeType};base64,${form.resumeData}`;
+    a.download = form.resumeName as string;
+    a.click();
+  };
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--color-muted)', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Paperclip size={12} /> RESUME FOR THIS APPLICATION
+        {form.resumeName && <span style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--color-accent)', borderRadius: 999, padding: '1px 6px', fontSize: 9, fontWeight: 700 }}>ATTACHED</span>}
+      </div>
+
+      {form.resumeName ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--color-surface-2)', borderRadius: 8, padding: '10px 14px', border: '1px solid var(--color-border)' }}>
+          <Paperclip size={14} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{form.resumeName as string}</div>
+            {form.resumeUpdatedAt && <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Uploaded {new Date(form.resumeUpdatedAt as string).toLocaleDateString()}</div>}
+          </div>
+          <button className="btn-icon" title="Download" onClick={download}><Download size={14} /></button>
+          <button className="btn-icon" title="Remove" onClick={clear} style={{ color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Pick from library */}
+          {resumes.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Library size={14} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
+              <select
+                defaultValue=""
+                onChange={(e) => { if (e.target.value) attachFromLibrary(e.target.value); }}
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                <option value="">Pick from Resume Library…</option>
+                {resumes.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label} — {r.fileName}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {/* Or upload new */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', background: 'var(--color-surface-2)', border: '1px dashed var(--color-border)', borderRadius: 8, padding: '12px 16px' }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) readResume(f); }}
+          >
+            <Paperclip size={15} style={{ color: 'var(--color-muted)' }} />
+            <span style={{ fontSize: 13, color: 'var(--color-muted)' }}>
+              {resumes.length > 0 ? 'Or upload a new file (PDF, DOC, DOCX)' : 'Upload resume (PDF, DOC, DOCX) or drag & drop'}
+            </span>
+            <input type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) readResume(f); e.target.value = ''; }}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function F({ label, children, err }: { label: string; children: React.ReactNode; err?: string }) {
   return (
@@ -57,6 +139,21 @@ export function AddEditModal({ job, onClose }: Props) {
 
   const set = (field: string, value: unknown) =>
     setForm((f) => ({ ...f, [field]: value }));
+
+  const readResume = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      setForm((f) => ({
+        ...f,
+        resumeName: file.name,
+        resumeData: base64,
+        resumeType: file.type || 'application/octet-stream',
+        resumeUpdatedAt: new Date().toISOString(),
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -421,6 +518,8 @@ export function AddEditModal({ job, onClose }: Props) {
                 )}
               </div>
             )}
+            {/* RESUME FOR THIS APPLICATION */}
+            <ResumePickerSection form={form} set={set} readResume={readResume} />
           </div>
 
           {/* Footer */}

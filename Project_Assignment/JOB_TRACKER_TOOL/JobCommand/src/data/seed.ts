@@ -45,7 +45,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Phone Screen', at: d(8) },
       { status: 'Interview',    at: d(3) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-2',
@@ -79,7 +79,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Interview',    at: d(9) },
       { status: 'Offer',        at: d(2) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-3',
@@ -111,7 +111,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Submitted',    at: d(6) },
       { status: 'Phone Screen', at: d(1) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-4',
@@ -144,7 +144,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Interview',  at: d(20) },
       { status: 'Rejected',   at: d(15) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-5',
@@ -175,7 +175,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Saved',     at: d(5) },
       { status: 'Submitted', at: d(3) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-6',
@@ -210,7 +210,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Offer',        at: d(10) },
       { status: 'Accepted',     at: d(5) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-7',
@@ -238,7 +238,7 @@ export const SEED_JOBS: Job[] = [
     contactPhone: '',
     notes: 'Requires visual regression testing with Percy/Chromatic. Research before applying.',
     history: [{ status: 'Saved', at: d(2) }],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
   {
     id: 'seed-8',
@@ -270,7 +270,7 @@ export const SEED_JOBS: Job[] = [
       { status: 'Submitted', at: d(9) },
       { status: 'Withdrawn', at: d(5) },
     ],
-    coverLetter: '',
+    coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '',
   },
 ];
 

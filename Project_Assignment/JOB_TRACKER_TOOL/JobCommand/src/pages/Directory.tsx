@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronUp, ChevronDown, Pencil, Trash2, Sparkles, Download } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Pencil, Trash2, Sparkles, Download, Paperclip } from 'lucide-react';
 import { useJobs, useStore } from '../store/useStore';
 import { STATUSES, PRIORITY_ICONS } from '../lib/constants';
 import { formatSalaryRange, isOverdue, formatDate } from '../lib/format';
@@ -72,19 +72,34 @@ export function Directory() {
 
   const exportCSV = (ids?: string[]) => {
     const list = ids ? jobs.filter((j) => ids.includes(j.id)) : filtered;
-    const headers = ['Company','Role','Status','Location','Salary','Source','Applied','Follow-up','Priority','Contact','URL'];
+    const headers = [
+      'Company', 'Role', 'Status', 'Location', 'Salary', 'Source',
+      'Applied', 'Follow-up', 'Priority', 'Contact', 'Contact Role',
+      'Contact Email', 'Contact Phone', 'Tags', 'Notes',
+      'Cover Letter', 'Resume File', 'Resume Uploaded', 'URL',
+    ];
     const rows = list.map((j) => [
       j.company, j.role, j.status, j.location,
       formatSalaryRange(j.salaryMin, j.salaryMax, j.currency || 'USD'),
       j.source, j.appliedDate, j.followUpDate, j.priority,
-      j.contactName ? `${j.contactName} (${j.contactRole})` : '',
-      j.url,
+      j.contactName || '', j.contactRole || '',
+      j.contactEmail || '', j.contactPhone || '',
+      (j.tags || []).join('; '),
+      j.notes || '',
+      j.coverLetter ? 'Yes' : 'No',
+      j.resumeName || '',
+      j.resumeUpdatedAt ? new Date(j.resumeUpdatedAt).toLocaleDateString() : '',
+      j.url || '',
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const esc = (v: unknown) => {
+      const s = String(v ?? '');
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const csv = [headers, ...rows].map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = `applications-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    a.href = url; a.download = `careerpulse-${new Date().toISOString().split('T')[0]}.csv`; a.click();
     URL.revokeObjectURL(url);
     addToast('CSV exported', 'success');
   };
@@ -199,13 +214,14 @@ export function Directory() {
               <th onClick={() => toggleSort('followUpDate')}>Follow-up <SortIcon col="followUpDate" /></th>
               <th>Priority</th>
               <th>Contact</th>
+              <th style={{ width: 72 }}>Resume</th>
               <th style={{ width: 80 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={11}>
+                <td colSpan={12}>
                   <div className="empty-state">
                     {search || statusFilter || sourceFilter ? 'No results match your filters' : 'No applications yet — add one!'}
                   </div>
@@ -255,6 +271,25 @@ export function Directory() {
                           <div style={{ color: 'var(--color-muted)', fontSize: 11 }}>{j.contactRole}</div>
                         </div>
                       ) : '—'}
+                    </td>
+                    <td>
+                      {j.resumeName ? (
+                        <button
+                          className="btn-icon"
+                          title={`Download: ${j.resumeName}`}
+                          onClick={() => {
+                            const a = document.createElement('a');
+                            a.href = `data:${j.resumeType};base64,${j.resumeData}`;
+                            a.download = j.resumeName;
+                            a.click();
+                          }}
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          <Paperclip size={13} />
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>—</span>
+                      )}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 2 }}>

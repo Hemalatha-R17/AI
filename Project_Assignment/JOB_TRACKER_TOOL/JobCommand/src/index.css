@@ -238,7 +238,18 @@ label {
 .tbl tr:hover td { background: rgba(34,38,58,0.5); }
 
 /* ── Kanban ──────────────────────────────────────── */
-.kboard { display: flex; gap: 12px; padding: 4px 0 16px; overflow-x: auto; min-height: 0; }
+.kboard {
+  display: flex;
+  gap: 12px;
+  padding: 4px 4px 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+  scrollbar-width: none;
+}
+.kboard::-webkit-scrollbar { display: none; }
 .kcol {
   flex: 0 0 272px;
   background: var(--color-surface);
@@ -246,7 +257,8 @@ label {
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 220px);
+  height: 100%;
+  min-height: 0;
 }
 .kcol-header {
   padding: 12px 14px 8px;

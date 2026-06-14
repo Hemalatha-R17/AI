@@ -148,7 +148,7 @@ export function Pipeline() {
   };
 
   return (
-    <div style={{ padding: '16px 20px', overflowX: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: '16px 20px 16px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
       <div className="kboard">
         {STATUSES.map((status) => {
           const colJobs = jobs.filter((j) => j.status === status);
@@ -209,7 +209,7 @@ export function Pipeline() {
 
       {addStatus && (
         <AddEditModal
-          job={{ id: '', createdAt: '', company: '', role: '', location: '', status: addStatus, priority: 'Medium', jobType: 'Full-time', currency: 'USD', salaryMin: null, salaryMax: null, tags: [], source: '', appliedDate: '', nextAction: '', followUpDate: '', interviewRound: '', url: '', jdText: '', contactName: '', contactRole: '', contactEmail: '', contactPhone: '', notes: '', history: [], coverLetter: '' }}
+          job={{ id: '', createdAt: '', company: '', role: '', location: '', status: addStatus, priority: 'Medium', jobType: 'Full-time', currency: 'USD', salaryMin: null, salaryMax: null, tags: [], source: '', appliedDate: '', nextAction: '', followUpDate: '', interviewRound: '', url: '', jdText: '', contactName: '', contactRole: '', contactEmail: '', contactPhone: '', notes: '', history: [], coverLetter: '', resumeName: '', resumeData: '', resumeType: '', resumeUpdatedAt: '' }}
           onClose={() => setAddStatus(null)}
         />
       )}

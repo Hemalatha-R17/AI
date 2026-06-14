@@ -43,6 +43,11 @@ export interface Job {
   notes: string;
   history: HistoryEntry[];
   coverLetter: string;
+  // Resume
+  resumeName: string;
+  resumeData: string;   // base64
+  resumeType: string;   // MIME type
+  resumeUpdatedAt: string;
 }
 
 export interface UserProfile {
@@ -61,6 +66,17 @@ export interface AIProvider {
   apiKey: string;
   model: string;
   free: boolean;
+}
+
+export interface ResumeEntry {
+  id: string;
+  label: string;       // user-given name e.g. "QA Automation – 2026"
+  fileName: string;    // original file name
+  data: string;        // base64
+  type: string;        // MIME type
+  notes: string;
+  uploadedAt: string;  // ISO
+  updatedAt: string;   // ISO
 }
 
 export interface Toast {
