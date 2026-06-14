@@ -1,0 +1,15 @@
+{
+  "name": "careerpulse-demo-tests",
+  "version": "1.0.0",
+  "description": "Playwright demo tour and E2E tests for CareerPulse",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "typescript": "^5.4.0"
+  }
+}

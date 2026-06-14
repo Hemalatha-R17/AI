@@ -1,0 +1,68 @@
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { Job, UserProfile } from '../types';
+
+interface AppDB extends DBSchema {
+  jobs:     { key: string; value: Job };
+  profiles: { key: string; value: UserProfile };
+  settings: { key: string; value: { id: string; data: string } };
+}
+
+let _db: IDBPDatabase<AppDB> | null = null;
+
+async function getDb(): Promise<IDBPDatabase<AppDB>> {
+  if (_db) return _db;
+  _db = await openDB<AppDB>('jobcommand-v1', 1, {
+    upgrade(db) {
+      db.createObjectStore('jobs',     { keyPath: 'id' });
+      db.createObjectStore('profiles', { keyPath: 'id' });
+      db.createObjectStore('settings', { keyPath: 'id' });
+    },
+  });
+  return _db;
+}
+
+export async function dbGetJobs(): Promise<Job[]> {
+  const db = await getDb();
+  return db.getAll('jobs');
+}
+
+export async function dbSaveJob(job: Job): Promise<void> {
+  const db = await getDb();
+  await db.put('jobs', job);
+}
+
+export async function dbDeleteJob(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('jobs', id);
+}
+
+export async function dbGetProfiles(): Promise<UserProfile[]> {
+  const db = await getDb();
+  return db.getAll('profiles');
+}
+
+export async function dbSaveProfile(profile: UserProfile): Promise<void> {
+  const db = await getDb();
+  await db.put('profiles', profile);
+}
+
+export async function dbGetSetting(id: string): Promise<string | null> {
+  const db = await getDb();
+  const row = await db.get('settings', id);
+  return row ? row.data : null;
+}
+
+export async function dbSetSetting(id: string, data: string): Promise<void> {
+  const db = await getDb();
+  await db.put('settings', { id, data });
+}
+
+export async function dbClear(): Promise<void> {
+  const db = await getDb();
+  await db.clear('jobs');
+}
+
+export async function dbExport(): Promise<{ jobs: Job[]; profiles: UserProfile[] }> {
+  const [jobs, profiles] = await Promise.all([dbGetJobs(), dbGetProfiles()]);
+  return { jobs, profiles };
+}

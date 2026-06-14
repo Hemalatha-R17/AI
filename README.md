@@ -23,11 +23,17 @@ A learning repository for an AI-assisted QA testing course. It tracks coursework
 │   ├── task_plan.md                — Implementation task plan
 │   └── jira-test-plan-generator/  — React + Vite app (Jira → AI test plan)
 ├── Project_Assignment/             — Assignment deliverables
-│   ├── Problem.md
-│   ├── SKILL.md
-│   ├── RICE-POT-RestAPI-Playwright-Prompt.md
 │   ├── RestfulFramework/           — RESTful API automation framework (Playwright)
-│   └── B.L.A.S.T_Framework/       — B.L.A.S.T Test Plan Generator (deployed to Vercel)
+│   │   ├── Problem.md
+│   │   ├── SKILL.md
+│   │   └── RICE-POT-RestAPI-Playwright-Prompt.md
+│   ├── B.L.A.S.T_Framework/       — B.L.A.S.T Test Plan Generator (deployed to Vercel)
+│   └── JOB_TRACKER_TOOL/          — CareerPulse job tracker (React app + Playwright tests)
+│       ├── JobCommand/             — Main React application (Vite + TypeScript)
+│       ├── Improvements/           — Playwright E2E suite & manual test checklist
+│       ├── architecture/           — SOPs: CRUD, Kanban, persistence, search
+│       ├── B.L.A.S.T.md           — B.L.A.S.T build protocol for this project
+│       └── findings.md             — Research & design findings
 ├── VWO_Login_Dashboard_Test_Plan.md
 └── RESTFUL_TEST_PLAN.md
 ```
@@ -230,6 +236,87 @@ npm run typecheck
 
 ---
 
+## Project Assignment — CareerPulse Job Tracker
+
+**Location:** `Project_Assignment/JOB_TRACKER_TOOL/JobCommand/`
+
+A full-featured AI-assisted job application tracker built with React 18 + TypeScript, running entirely in the browser with zero cloud dependency (all data stored in IndexedDB).
+
+### Stack
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| React 18 + TypeScript | — | UI framework |
+| Vite | ^5.x | Build tool & dev server |
+| Zustand | — | Global state management |
+| IndexedDB (`idb`) | — | Persistent local storage |
+| Tailwind CSS | v3 | Styling |
+| Framer Motion | — | Animated welcome splash & transitions |
+| Recharts | — | Analytics & funnel charts |
+| EmailJS REST API | — | Email notifications (200/month free) |
+| canvas-confetti | — | Offer/Accepted celebration effect |
+
+### Features
+
+- **Dashboard** — stat cards (Total, Active, Interviews, Offers) + recent applications list
+- **Pipeline** — drag-and-drop Kanban board with 8 status columns (Saved → Withdrawn)
+- **Directory** — sortable/filterable table view with bulk select, move, delete
+- **Calendars** — monthly calendar showing follow-up dates and interview appointments
+- **Analytics & Funnels** — funnel chart, status distribution, application timeline
+- **Resume Studio** — skill profile editor + master resume textarea with AI enhance
+- **Interview Prep** — AI-generated Q&A by topic category
+- **Job Discovery** — AI-powered job search interface
+- **Cover Letter Gen** — two-panel generator: job selector → AI generate → editable textarea → save to job
+- **Settings** — 6 AI providers (Groq, Gemini, OpenRouter, Mistral, OpenAI, Claude), notifications, data export/import
+- **Theme Studio** — 15+ dark/light/colorful themes applied instantly
+- **AI Assistant Panel** — floating chat panel powered by connected AI provider
+- **Welcome Splash** — animated full-screen greeting with user's name after login
+- **Real-time Offer Notifications** — browser popup + email via EmailJS fires immediately on status change (no daily-digest delay)
+
+### Seed Data
+
+8 QA-focused pre-loaded roles: Anthropic (Senior SDET), Vercel (QA Automation Lead), Stripe (Automation Test Engineer), Linear (QA Engineer), Cloudflare (Senior QA Automation Engineer), Netflix (Staff SDET), Figma (Automation QA Engineer), Slack (QA Lead).
+
+### Run Locally
+
+```bash
+cd Project_Assignment/JOB_TRACKER_TOOL/JobCommand
+npm install
+npm run dev          # http://localhost:5173
+npm run build        # production build to dist/
+```
+
+### Playwright E2E Test Suite
+
+**Location:** `Project_Assignment/JOB_TRACKER_TOOL/Improvements/`
+
+20 automated tests covering the full app tour — landing, welcome splash, dashboard, add job, pipeline, directory, calendars, analytics, resume studio, interview prep, job discovery, cover letter gen, settings, theme studio, AI panel, edit modal, offer confetti, bulk select, export, full nav tour.
+
+```bash
+cd Project_Assignment/JOB_TRACKER_TOOL/Improvements
+npm install
+npx playwright install chromium
+
+# Start the app first (in a separate terminal):
+# cd ../JobCommand && npm run dev
+
+# Run all 20 tests (headed, with video + screenshots + traces)
+npx playwright test --reporter=html
+
+# Open HTML report
+start playwright-report/index.html
+```
+
+**Output:** Screenshots saved to `screenshots/`, videos and traces in `test-results/`, HTML report at `playwright-report/index.html`.
+
+### Manual Test Checklist
+
+**File:** `Project_Assignment/JOB_TRACKER_TOOL/Improvements/TEST_CHECKLIST.md`
+
+130+ manual test checkpoints across 20 sections including seed data verification, real-time offer notification, bulk actions, cover letter save flow, and cross-feature checks. Includes Bug Log and Test Summary tables.
+
+---
+
 ## Project 2 — Selenium Framework (chapter_02_Prompt_Eng)
 
 **Location:** `chapter_02_Prompt_Eng/Project2_Selenium_Framework/AdvanceSeleniumFramework/`
@@ -262,7 +349,7 @@ Every prompt artifact in this repository follows the **RICE-POT** structure:
 | O | Output | Exact format (CSV, Markdown, TypeScript), column spec |
 | T | Tone | Communication style (technical, output-only) |
 
-Prompt templates are in `chapter_02_Prompt_Eng/templates/`. The RESTful API prompt is in `Project_Assignment/RICE-POT-RestAPI-Playwright-Prompt.md`.
+Prompt templates are in `chapter_02_Prompt_Eng/templates/`. The RESTful API prompt is in `Project_Assignment/RestfulFramework/RICE-POT-RestAPI-Playwright-Prompt.md`.
 
 ---
 
