@@ -53,7 +53,7 @@ function ResumePickerSection({ form, set, readResume }: {
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--color-muted)', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
         <Paperclip size={12} /> RESUME FOR THIS APPLICATION
-        {form.resumeName && <span style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--color-accent)', borderRadius: 999, padding: '1px 6px', fontSize: 9, fontWeight: 700 }}>ATTACHED</span>}
+        {!!(form.resumeName as string) && <span style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--color-accent)', borderRadius: 999, padding: '1px 6px', fontSize: 9, fontWeight: 700 }}>ATTACHED</span>}
       </div>
 
       {form.resumeName ? (
@@ -61,7 +61,7 @@ function ResumePickerSection({ form, set, readResume }: {
           <Paperclip size={14} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(form.resumeName)}</div>
-            {form.resumeUpdatedAt && <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Uploaded {new Date(String(form.resumeUpdatedAt)).toLocaleDateString()}</div>}
+            {!!(form.resumeUpdatedAt as string) && <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>Uploaded {new Date(String(form.resumeUpdatedAt)).toLocaleDateString()}</div>}
           </div>
           <button className="btn-icon" title="Download" onClick={download}><Download size={14} /></button>
           <button className="btn-icon" title="Remove" onClick={clear} style={{ color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
