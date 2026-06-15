@@ -32,6 +32,7 @@ export interface Job {
   nextAction: string;
   followUpDate: string;
   interviewRound: string;
+  interviewDate?: string;
   url: string;
   jdText: string;
   // Contact
@@ -83,6 +84,16 @@ export interface Toast {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
+}
+
+export interface Bookmark {
+  id: string;
+  company: string;
+  role: string;
+  url: string;
+  notes: string;
+  source: string;
+  addedAt: string;
 }
 
 export type View =

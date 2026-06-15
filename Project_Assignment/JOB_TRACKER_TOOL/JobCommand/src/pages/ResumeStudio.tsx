@@ -93,11 +93,17 @@ export function ResumeStudio() {
   };
 
   const analyzeResume = () => {
+    const resumeContext = profile.masterResume
+      ? `My Resume:\n${profile.masterResume}`
+      : skills
+      ? `My Skills: ${skills}`
+      : '(no resume text or skill profile provided — add one in the Skill Profile tab)';
+
     setPrompt(`Analyze this job description against my resume/skills profile.
 
 JD: ${jd || 'No JD provided'}
 
-My Skills: ${skills}
+${resumeContext}
 
 Provide:
 1. Match score (0-100%)
@@ -114,7 +120,7 @@ Provide:
 
   return (
     <div style={{ padding: 24, flex: 1, overflow: 'auto' }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div className="page-tabs" style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {[['resumes','Resume Library'], ['analyzer','AI Analyzer'], ['skills','Skill Profile']].map(([id, label]) => (
           <button key={id} className={`btn ${tab === id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab(id as typeof tab)}>
             {label}
@@ -241,7 +247,11 @@ Provide:
             <Sparkles size={14} /> Analyze vs My Profile
           </button>
           <p style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 8 }}>
-            AI will compare the JD against your Skill Profile and provide a match score.
+            {profile.masterResume
+              ? 'AI will compare the JD against your Master Resume text.'
+              : skills
+              ? 'AI will compare the JD against your Skill Profile. For better results, add your full resume text in the Skill Profile tab → Master Resume.'
+              : 'No resume text found — add your resume in the Skill Profile tab before analyzing.'}
           </p>
         </div>
       )}

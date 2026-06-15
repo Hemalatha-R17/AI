@@ -1,8 +1,79 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp } from 'lucide-react';
 import { useJobs } from '../store/useStore';
-import { STATUS_COLORS } from '../lib/constants';
+import { STATUS_COLORS, STATUS_ORDER } from '../lib/constants';
 import { formatDate } from '../lib/format';
+
+const PIPELINE_STAGES = ['Submitted', 'Phone Screen', 'Interview', 'Offer', 'Accepted'] as const;
+
+function ActivePipeline() {
+  const jobs = useJobs();
+  const active = useMemo(() =>
+    jobs
+      .filter((j) => ['Submitted', 'Phone Screen', 'Interview', 'Offer'].includes(j.status))
+      .sort((a, b) => STATUS_ORDER[b.status as keyof typeof STATUS_ORDER] - STATUS_ORDER[a.status as keyof typeof STATUS_ORDER])
+      .slice(0, 8),
+    [jobs]
+  );
+
+  if (active.length === 0) return null;
+
+  return (
+    <div className="card">
+      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <TrendingUp size={14} style={{ color: 'var(--color-accent)' }} /> Active Pipeline
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {active.map((job) => {
+          const currentIdx = PIPELINE_STAGES.indexOf(job.status as typeof PIPELINE_STAGES[number]);
+          return (
+            <div key={job.id}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>
+                {job.company}
+                <span style={{ fontWeight: 400, color: 'var(--color-muted)', marginLeft: 6 }}>{job.role}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                {PIPELINE_STAGES.map((stage, i) => {
+                  const reached = i <= currentIdx;
+                  const isCurrent = i === currentIdx;
+                  const color = STATUS_COLORS[stage as keyof typeof STATUS_COLORS];
+                  return (
+                    <div key={stage} style={{ display: 'flex', alignItems: 'center', flex: i < PIPELINE_STAGES.length - 1 ? 1 : 0 }}>
+                      <div
+                        title={stage}
+                        style={{
+                          width: isCurrent ? 10 : 7,
+                          height: isCurrent ? 10 : 7,
+                          borderRadius: '50%',
+                          background: reached ? color : 'var(--color-border)',
+                          border: isCurrent ? `2px solid ${color}` : 'none',
+                          boxShadow: isCurrent ? `0 0 6px ${color}` : 'none',
+                          flexShrink: 0,
+                          transition: 'all 0.2s',
+                        }}
+                      />
+                      {i < PIPELINE_STAGES.length - 1 && (
+                        <div style={{
+                          flex: 1,
+                          height: 2,
+                          background: i < currentIdx ? color : 'var(--color-border)',
+                          transition: 'background 0.3s',
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 9, color: STATUS_COLORS[job.status as keyof typeof STATUS_COLORS], fontWeight: 600, marginTop: 3 }}>
+                {job.status}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function Calendars() {
   const jobs  = useJobs();
@@ -25,7 +96,7 @@ export function Calendars() {
       }
       const interviewEntry = j.history?.find((h) => h.status === 'Interview' || h.status === 'Phone Screen');
       if (interviewEntry) {
-        const key = interviewEntry.at.split('T')[0];
+        const key = j.interviewDate || interviewEntry.at.split('T')[0];
         map[key] = map[key] || [];
         map[key].push({ label: `🎯 ${j.company} ${interviewEntry.status}`, color: STATUS_COLORS[interviewEntry.status] || '#a855f7', company: j.company, url: j.url });
       }
@@ -56,7 +127,7 @@ export function Calendars() {
   const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <div style={{ padding: 24, flex: 1, overflow: 'auto', display: 'flex', gap: 20 }}>
+    <div className="cal-layout" style={{ padding: 24, flex: 1, overflow: 'auto', display: 'flex', gap: 20 }}>
       {/* Calendar */}
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -104,9 +175,11 @@ export function Calendars() {
         </div>
       </div>
 
-      {/* Upcoming sidebar */}
-      <div style={{ width: 280, flexShrink: 0 }}>
-        <div className="card" style={{ position: 'sticky', top: 0 }}>
+      {/* Upcoming + Pipeline sidebar */}
+      <div className="cal-sidebar" style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Upcoming events */}
+        <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <CalendarDays size={14} /> Upcoming Events
           </div>
@@ -137,6 +210,9 @@ export function Calendars() {
             </div>
           )}
         </div>
+
+        {/* Interview pipeline timeline */}
+        <ActivePipeline />
       </div>
     </div>
   );

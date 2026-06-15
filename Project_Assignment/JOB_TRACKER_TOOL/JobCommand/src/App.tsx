@@ -99,7 +99,7 @@ function Skeleton() {
 
 function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 2200);
+    const t = setTimeout(onDone, 1400);
     return () => clearTimeout(t);
   }, [onDone]);
 
@@ -111,7 +111,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
       transition={{ duration: 0.4 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+        background: 'linear-gradient(135deg, #020714, #060d24, #04101f)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 16,
       }}
@@ -120,7 +120,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.15, type: 'spring', stiffness: 200, damping: 18 }}
-        style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#7c3aed,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#6366f1,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <Activity size={36} color="#fff" />
       </motion.div>
@@ -131,7 +131,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
         style={{ textAlign: 'center' }}
       >
         <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-          Welcome, <span style={{ background: 'linear-gradient(90deg,#a78bfa,#60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{name}</span>!
+          Welcome, <span style={{ background: 'linear-gradient(90deg,#818cf8,#38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{name}</span>!
         </div>
         <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>
           Your career dashboard is ready.
@@ -141,7 +141,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ delay: 0.5, duration: 1.5, ease: 'linear' }}
-        style={{ width: 180, height: 3, background: 'linear-gradient(90deg,#7c3aed,#2563eb)', borderRadius: 999, transformOrigin: 'left', marginTop: 8 }}
+        style={{ width: 180, height: 3, background: 'linear-gradient(90deg,#6366f1,#06b6d4)', borderRadius: 999, transformOrigin: 'left', marginTop: 8 }}
       />
     </motion.div>
   );
@@ -160,6 +160,22 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => { hydrate(); }, []);
+
+  useEffect(() => {
+    const syncRange = (el: HTMLInputElement) => {
+      const min = Number(el.min || 0);
+      const max = Number(el.max || 100);
+      const pct = ((Number(el.value) - min) / (max - min)) * 100;
+      el.style.backgroundSize = `${pct}% 100%`;
+    };
+    const handler = (e: Event) => {
+      if ((e.target as HTMLElement).matches('input[type="range"]'))
+        syncRange(e.target as HTMLInputElement);
+    };
+    document.addEventListener('input', handler);
+    document.querySelectorAll<HTMLInputElement>('input[type="range"]').forEach(syncRange);
+    return () => document.removeEventListener('input', handler);
+  }, []);
 
   const handleLogin = (name: string) => { setWelcomeName(name); setShowWelcome(true); };
 
@@ -181,6 +197,7 @@ export default function App() {
       <Sidebar />
 
       <div
+        className="main-col"
         style={{
           flex: 1,
           display: 'flex',

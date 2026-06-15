@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import type { Job, UserProfile, Toast, View, Status, AIProvider, ResumeEntry } from '../types';
+import type { Job, UserProfile, Toast, View, Status, AIProvider, ResumeEntry, Bookmark } from '../types';
 import {
   dbGetJobs, dbSaveJob, dbDeleteJob,
   dbGetProfiles, dbSaveProfile, dbGetSetting, dbSetSetting,
   dbGetResumes, dbSaveResume, dbDeleteResume,
+  dbGetBookmarks, dbSaveBookmark, dbDeleteBookmark,
 } from '../lib/db';
 import { SEED_JOBS, DEFAULT_PROFILE } from '../data/seed';
 
@@ -11,6 +12,7 @@ interface State {
   // Data
   jobs: Job[];
   resumes: ResumeEntry[];
+  bookmarks: Bookmark[];
   profile: UserProfile;
   activeProfileId: string | null;
   profiles: UserProfile[];
@@ -62,6 +64,11 @@ interface State {
   addResume: (r: ResumeEntry) => Promise<void>;
   updateResume: (r: ResumeEntry) => Promise<void>;
   deleteResume: (id: string) => Promise<void>;
+
+  // Bookmarks
+  addBookmark: (b: Bookmark) => Promise<void>;
+  updateBookmark: (b: Bookmark) => Promise<void>;
+  deleteBookmark: (id: string) => Promise<void>;
 }
 
 let toastId = 0;
@@ -69,6 +76,7 @@ let toastId = 0;
 export const useStore = create<State>((set, get) => ({
   jobs: [],
   resumes: [],
+  bookmarks: [],
   profile: DEFAULT_PROFILE,
   activeProfileId: null,
   profiles: [],
@@ -97,7 +105,33 @@ export const useStore = create<State>((set, get) => ({
         profile = profiles[0];
       }
       const resumes = await dbGetResumes();
-      set({ jobs, profile, profiles, resumes, hydrated: true, activeProfileId: profile.id });
+
+      // Load bookmarks from IndexedDB; migrate legacy localStorage entries
+      let bookmarks = await dbGetBookmarks();
+      const lsRaw = localStorage.getItem('cp-bookmarks');
+      if (lsRaw) {
+        try {
+          const legacy = JSON.parse(lsRaw) as Array<Record<string, string>>;
+          for (const b of legacy) {
+            const migrated: Bookmark = {
+              id: b.id || `bk-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              company: b.company || '',
+              role: b.role || '',
+              url: b.url || '',
+              notes: b.notes || '',
+              source: b.source || '',
+              addedAt: b.addedAt || new Date().toISOString().split('T')[0],
+            };
+            if (!bookmarks.find((x) => x.id === migrated.id)) {
+              await dbSaveBookmark(migrated);
+              bookmarks.push(migrated);
+            }
+          }
+          localStorage.removeItem('cp-bookmarks');
+        } catch { /* ignore corrupt legacy data */ }
+      }
+
+      set({ jobs, profile, profiles, resumes, bookmarks, hydrated: true, activeProfileId: profile.id });
       await get().loadProviders();
 
       // Run notification alerts once per day
@@ -255,8 +289,8 @@ export const useStore = create<State>((set, get) => ({
   setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
 
   exportData: async () => {
-    const jobs = get().jobs;
-    const blob = new Blob([JSON.stringify({ jobs }, null, 2)], { type: 'application/json' });
+    const { jobs, bookmarks } = get();
+    const blob = new Blob([JSON.stringify({ jobs, bookmarks }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -304,10 +338,14 @@ export const useStore = create<State>((set, get) => ({
 
   importData: async (json) => {
     try {
-      const { jobs } = JSON.parse(json) as { jobs: Job[] };
-      for (const j of jobs) await dbSaveJob(j);
-      set({ jobs });
-      get().addToast(`Imported ${jobs.length} applications`, 'success');
+      const parsed = JSON.parse(json) as { jobs: Job[]; bookmarks?: Bookmark[] };
+      for (const j of parsed.jobs) await dbSaveJob(j);
+      set({ jobs: parsed.jobs });
+      if (parsed.bookmarks?.length) {
+        for (const b of parsed.bookmarks) await dbSaveBookmark(b);
+        set({ bookmarks: parsed.bookmarks });
+      }
+      get().addToast(`Imported ${parsed.jobs.length} applications${parsed.bookmarks?.length ? ` + ${parsed.bookmarks.length} bookmarks` : ''}`, 'success');
     } catch {
       get().addToast('Import failed — invalid JSON', 'error');
     }
@@ -348,6 +386,7 @@ export const useStore = create<State>((set, get) => ({
       tags:      col(['tags']),
       salaryMin: col(['salarymin','minsalary']),
       salaryMax: col(['salarymax','maxsalary']),
+      interviewDate: col(['interviewdate','scheduleddate','interviewon']),
     };
 
     const added: Job[] = [];
@@ -386,6 +425,7 @@ export const useStore = create<State>((set, get) => ({
         source:    idx.source    >= 0 ? (cells[idx.source]    || '') : '',
         appliedDate: idx.appliedDate >= 0 ? (cells[idx.appliedDate] || '') : '',
         nextAction: '', followUpDate: '', interviewRound: '',
+        interviewDate: idx.interviewDate >= 0 ? (cells[idx.interviewDate] || '') || undefined : undefined,
         url:       idx.url   >= 0 ? (cells[idx.url]   || '') : '',
         jdText:    '',
         contactName: '', contactRole: '', contactEmail: '', contactPhone: '',
@@ -429,6 +469,21 @@ export const useStore = create<State>((set, get) => ({
     await dbDeleteResume(id);
     set((s) => ({ resumes: s.resumes.filter((x) => x.id !== id) }));
     get().addToast('Resume deleted', 'info');
+  },
+
+  addBookmark: async (b) => {
+    await dbSaveBookmark(b);
+    set((s) => ({ bookmarks: [...s.bookmarks, b] }));
+  },
+
+  updateBookmark: async (b) => {
+    await dbSaveBookmark(b);
+    set((s) => ({ bookmarks: s.bookmarks.map((x) => x.id === b.id ? b : x) }));
+  },
+
+  deleteBookmark: async (id) => {
+    await dbDeleteBookmark(id);
+    set((s) => ({ bookmarks: s.bookmarks.filter((x) => x.id !== id) }));
   },
 }));
 

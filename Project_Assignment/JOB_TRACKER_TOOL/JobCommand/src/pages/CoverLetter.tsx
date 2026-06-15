@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles, Copy, Check, Loader } from 'lucide-react';
 import { useJobs, useStore, useProfile } from '../store/useStore';
 import { callAI } from '../lib/ai';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 const TONES = ['Professional', 'Enthusiastic', 'Concise', 'Creative'] as const;
 
@@ -22,8 +23,7 @@ export function CoverLetter() {
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
   const getActiveProvider = () => {
-    const p = activeProviders[selectedProvider] || Object.values(activeProviders)[0];
-    return p ?? null;
+    return activeProviders[selectedProvider] || Object.values(activeProviders)[0] || null;
   };
 
   const generate = async () => {
@@ -32,6 +32,9 @@ export function CoverLetter() {
     if (!prov) {
       addToast('No AI provider connected — add an API key in Settings', 'error');
       return;
+    }
+    if (!activeProviders[selectedProvider] && prov) {
+      addToast(`Using ${prov.label} — set a default provider in Settings → AI Providers`, 'info');
     }
 
     const prompt = `Write a ${tone.toLowerCase()} cover letter for the ${selectedJob.role} position at ${selectedJob.company}.
@@ -76,19 +79,24 @@ Output the complete cover letter only, ready to copy and paste. Use placeholders
           AI Cover Letter Generator
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div className="cl-fields-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Select Application</label>
-            <select value={selectedJobId} onChange={(e) => { setSelectedJobId(e.target.value); setLetter(''); }}>
-              <option value="">Choose an application…</option>
-              {jobs.map((j) => <option key={j.id} value={j.id}>{j.company} — {j.role}</option>)}
-            </select>
+            <CustomSelect
+              value={selectedJobId}
+              onChange={(v) => { setSelectedJobId(v); setLetter(''); }}
+              options={jobs.map((j) => ({ value: j.id, label: `${j.company} — ${j.role}` }))}
+              placeholder="Choose an application…"
+            />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Tone</label>
-            <select value={tone} onChange={(e) => setTone(e.target.value as typeof TONES[number])}>
-              {TONES.map((t) => <option key={t}>{t}</option>)}
-            </select>
+            <CustomSelect
+              value={tone}
+              onChange={(v) => setTone(v as typeof TONES[number])}
+              options={[...TONES]}
+              placeholder="Tone…"
+            />
           </div>
         </div>
 

@@ -7,6 +7,7 @@ import { formatSalaryRange, isOverdue, formatDate } from '../lib/format';
 import type { Job, Status } from '../types';
 import { AddEditModal } from '../components/modal/AddEditModal';
 import { ConfirmModal } from '../components/modal/ConfirmModal';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 export function Directory() {
   const jobs      = useJobs();
@@ -112,7 +113,8 @@ export function Directory() {
   };
 
   const aiAction = (job: Job) => {
-    setPrompt(`Draft a professional follow-up email for my ${job.role} role at ${job.company}. Keep it concise.`);
+    const jd = job.jdText ? `\n\nJob Description:\n${job.jdText.slice(0, 1200)}` : '';
+    setPrompt(`Draft a professional follow-up email for my ${job.role} role at ${job.company}. Keep it concise.${jd}`);
     setAI(true);
   };
 
@@ -132,14 +134,20 @@ export function Directory() {
             style={{ paddingLeft: 32 }}
           />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ flex: '0 0 160px' }}>
-          <option value="">All Statuses</option>
-          {STATUSES.map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} style={{ flex: '0 0 160px' }}>
-          <option value="">All Sources</option>
-          {usedSources.map((s) => <option key={s}>{s}</option>)}
-        </select>
+        <CustomSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={STATUSES}
+          placeholder="All Statuses"
+          style={{ flex: '0 0 160px' }}
+        />
+        <CustomSelect
+          value={sourceFilter}
+          onChange={setSourceFilter}
+          options={usedSources}
+          placeholder="All Sources"
+          style={{ flex: '0 0 160px' }}
+        />
         <button className="btn btn-ghost" onClick={() => exportCSV()} style={{ padding: '8px 12px' }}>
           <Download size={13} /> Export CSV
         </button>
@@ -171,14 +179,13 @@ export function Directory() {
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)' }}>
               📋 {selected.size} selected
             </span>
-            <select
+            <CustomSelect
               value={bulkMoveTarget}
-              onChange={(e) => setBulkMoveTarget(e.target.value as Status)}
-              style={{ width: 'auto', padding: '4px 8px', fontSize: 12 }}
-            >
-              <option value="">Move to…</option>
-              {STATUSES.map((s) => <option key={s}>{s}</option>)}
-            </select>
+              onChange={(v) => setBulkMoveTarget(v as Status)}
+              options={STATUSES}
+              placeholder="Move to…"
+              style={{ minWidth: 140, fontSize: 12 }}
+            />
             {bulkMoveTarget && (
               <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={handleBulkMove}>
                 Apply Move
@@ -242,14 +249,13 @@ export function Directory() {
                            title={j.role}>{j.role}</div>
                     </td>
                     <td>
-                      <select
+                      <CustomSelect
                         value={j.status}
-                        onChange={(e) => moveJob(j.id, e.target.value as Status)}
-                        className={`pill pill-${j.status.replace(' ', '')}`}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px', fontSize: 11, fontWeight: 600 }}
-                      >
-                        {STATUSES.map((s) => <option key={s}>{s}</option>)}
-                      </select>
+                        onChange={(v) => moveJob(j.id, v as Status)}
+                        options={STATUSES}
+                        placeholder="Status"
+                        style={{ minWidth: 120, fontSize: 11 }}
+                      />
                     </td>
                     <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
                       {(j.salaryMin || j.salaryMax)

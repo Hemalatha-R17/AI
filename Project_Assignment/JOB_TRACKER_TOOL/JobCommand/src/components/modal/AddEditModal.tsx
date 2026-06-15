@@ -5,6 +5,8 @@ import { useStore } from '../../store/useStore';
 import type { Job, Status, Priority, JobType, Currency } from '../../types';
 import { STATUSES, PRIORITIES, JOB_TYPES, CURRENCIES, SOURCES, CONTACT_ROLES, INTERVIEW_ROUNDS } from '../../lib/constants';
 import { today } from '../../lib/format';
+import { CustomSelect } from '../ui/CustomSelect';
+import { CustomDatePicker } from '../ui/CustomDatePicker';
 
 interface Props {
   job?: Job;
@@ -72,16 +74,13 @@ function ResumePickerSection({ form, set, readResume }: {
           {resumes.length > 0 && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Library size={14} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
-              <select
-                defaultValue=""
-                onChange={(e) => { if (e.target.value) attachFromLibrary(e.target.value); }}
+              <CustomSelect
+                value=""
+                onChange={(v) => { if (v) attachFromLibrary(v); }}
+                options={resumes.map((r) => ({ value: r.id, label: `${r.label} — ${r.fileName}` }))}
+                placeholder="Pick from Resume Library…"
                 style={{ flex: 1, fontSize: 13 }}
-              >
-                <option value="">Pick from Resume Library…</option>
-                {resumes.map((r) => (
-                  <option key={r.id} value={r.id}>{r.label} — {r.fileName}</option>
-                ))}
-              </select>
+              />
             </div>
           )}
           {/* Or upload new */}
@@ -261,10 +260,12 @@ export function AddEditModal({ job, onClose }: Props) {
 
             <div className="form-row">
               <F label="Status *" err={errors.status}>
-                <select value={form.status} onChange={(e) => set('status', e.target.value)}>
-                  <option value="">Select status…</option>
-                  {STATUSES.map((s) => <option key={s}>{s}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.status}
+                  onChange={(v) => set('status', v)}
+                  options={STATUSES}
+                  placeholder="Select status…"
+                />
               </F>
               <F label="Location">
                 <input
@@ -279,14 +280,13 @@ export function AddEditModal({ job, onClose }: Props) {
             <div className="form-group">
               <label>Salary Range</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <select
+                <CustomSelect
                   value={form.currency}
-                  onChange={(e) => set('currency', e.target.value)}
+                  onChange={(v) => set('currency', v)}
+                  options={CURRENCIES}
+                  placeholder="Currency"
                   style={{ flex: '0 0 110px' }}
-                >
-                  <option value="">Currency</option>
-                  {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
-                </select>
+                />
                 <input
                   type="number" min={0} step={1000}
                   value={form.salaryMin ?? ''}
@@ -310,16 +310,20 @@ export function AddEditModal({ job, onClose }: Props) {
 
             <div className="form-row">
               <F label="Job Type">
-                <select value={form.jobType} onChange={(e) => set('jobType', e.target.value)}>
-                  <option value="">Select type…</option>
-                  {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.jobType}
+                  onChange={(v) => set('jobType', v)}
+                  options={JOB_TYPES}
+                  placeholder="Select type…"
+                />
               </F>
               <F label="Priority">
-                <select value={form.priority} onChange={(e) => set('priority', e.target.value)}>
-                  <option value="">Select priority…</option>
-                  {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.priority}
+                  onChange={(v) => set('priority', v)}
+                  options={PRIORITIES}
+                  placeholder="Select priority…"
+                />
               </F>
             </div>
 
@@ -336,16 +340,17 @@ export function AddEditModal({ job, onClose }: Props) {
 
             <div className="form-row">
               <F label="Source">
-                <select value={form.source} onChange={(e) => set('source', e.target.value)}>
-                  <option value="">Select source…</option>
-                  {SOURCES.map((s) => <option key={s}>{s}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.source}
+                  onChange={(v) => set('source', v)}
+                  options={SOURCES}
+                  placeholder="Select source…"
+                />
               </F>
               <F label="Application Date" err={errors.appliedDate}>
-                <input
-                  type="date"
+                <CustomDatePicker
                   value={form.appliedDate}
-                  onChange={(e) => set('appliedDate', e.target.value)}
+                  onChange={(v) => set('appliedDate', v)}
                 />
               </F>
             </div>
@@ -359,21 +364,32 @@ export function AddEditModal({ job, onClose }: Props) {
                 />
               </F>
               <F label="Follow-up Date">
-                <input
-                  type="date"
+                <CustomDatePicker
                   value={form.followUpDate}
-                  onChange={(e) => set('followUpDate', e.target.value)}
+                  onChange={(v) => set('followUpDate', v)}
                 />
               </F>
             </div>
 
-            {form.status === 'Interview' && (
-              <F label="Interview Round">
-                <select value={form.interviewRound} onChange={(e) => set('interviewRound', e.target.value)}>
-                  <option value="">Select round…</option>
-                  {INTERVIEW_ROUNDS.map((r) => <option key={r}>{r}</option>)}
-                </select>
-              </F>
+            {(form.status === 'Interview' || form.status === 'Phone Screen') && (
+              <div className="form-row">
+                {form.status === 'Interview' && (
+                  <F label="Interview Round">
+                    <CustomSelect
+                      value={form.interviewRound}
+                      onChange={(v) => set('interviewRound', v)}
+                      options={INTERVIEW_ROUNDS}
+                      placeholder="Select round…"
+                    />
+                  </F>
+                )}
+                <F label="Interview Date (scheduled)">
+                  <CustomDatePicker
+                    value={form.interviewDate || ''}
+                    onChange={(v) => set('interviewDate', v)}
+                  />
+                </F>
+              </div>
             )}
 
             <F label="Job Posting URL" err={errors.url}>
@@ -421,10 +437,12 @@ export function AddEditModal({ job, onClose }: Props) {
                     />
                   </F>
                   <F label="Contact Role">
-                    <select value={form.contactRole} onChange={(e) => set('contactRole', e.target.value)}>
-                      <option value="">Select…</option>
-                      {CONTACT_ROLES.map((r) => <option key={r}>{r}</option>)}
-                    </select>
+                    <CustomSelect
+                      value={form.contactRole}
+                      onChange={(v) => set('contactRole', v)}
+                      options={CONTACT_ROLES}
+                      placeholder="Select…"
+                    />
                   </F>
                 </div>
                 <div className="form-row">

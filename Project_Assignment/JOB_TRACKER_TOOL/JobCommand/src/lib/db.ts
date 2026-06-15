@@ -1,18 +1,19 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Job, UserProfile, ResumeEntry } from '../types';
+import type { Job, UserProfile, ResumeEntry, Bookmark } from '../types';
 
 interface AppDB extends DBSchema {
-  jobs:     { key: string; value: Job };
-  profiles: { key: string; value: UserProfile };
-  settings: { key: string; value: { id: string; data: string } };
-  resumes:  { key: string; value: ResumeEntry };
+  jobs:      { key: string; value: Job };
+  profiles:  { key: string; value: UserProfile };
+  settings:  { key: string; value: { id: string; data: string } };
+  resumes:   { key: string; value: ResumeEntry };
+  bookmarks: { key: string; value: Bookmark };
 }
 
 let _db: IDBPDatabase<AppDB> | null = null;
 
 async function getDb(): Promise<IDBPDatabase<AppDB>> {
   if (_db) return _db;
-  _db = await openDB<AppDB>('jobcommand-v1', 2, {
+  _db = await openDB<AppDB>('jobcommand-v1', 3, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         db.createObjectStore('jobs',     { keyPath: 'id' });
@@ -21,6 +22,9 @@ async function getDb(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 2) {
         db.createObjectStore('resumes', { keyPath: 'id' });
+      }
+      if (oldVersion < 3) {
+        db.createObjectStore('bookmarks', { keyPath: 'id' });
       }
     },
   });
@@ -81,6 +85,21 @@ export async function dbDeleteResume(id: string): Promise<void> {
 export async function dbClear(): Promise<void> {
   const db = await getDb();
   await db.clear('jobs');
+}
+
+export async function dbGetBookmarks(): Promise<Bookmark[]> {
+  const db = await getDb();
+  return db.getAll('bookmarks');
+}
+
+export async function dbSaveBookmark(b: Bookmark): Promise<void> {
+  const db = await getDb();
+  await db.put('bookmarks', b);
+}
+
+export async function dbDeleteBookmark(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('bookmarks', id);
 }
 
 export async function dbExport(): Promise<{ jobs: Job[]; profiles: UserProfile[] }> {

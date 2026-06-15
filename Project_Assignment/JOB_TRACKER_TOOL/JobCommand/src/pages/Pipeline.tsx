@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react'; // useState used by Pipeline component
 import { motion } from 'framer-motion';
 import { Plus, Sparkles, Pencil, Trash2 } from 'lucide-react';
 import { useJobs, useStore } from '../store/useStore';
@@ -13,7 +13,6 @@ function safeHost(url: string) {
 }
 
 function KCard({ job, onEdit, onDelete, onAI }: { job: Job; onEdit: () => void; onDelete: () => void; onAI: () => void }) {
-  const [hovered, setHovered] = useState(false);
   const pIcon = PRIORITY_ICONS[job.priority] || '⬜';
   const host  = job.url ? safeHost(job.url) : '';
   const overdue = job.followUpDate && isOverdue(job.followUpDate);
@@ -25,8 +24,6 @@ function KCard({ job, onEdit, onDelete, onAI }: { job: Job; onEdit: () => void; 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       {/* Company header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -104,18 +101,12 @@ function KCard({ job, onEdit, onDelete, onAI }: { job: Job; onEdit: () => void; 
         </div>
       )}
 
-      {/* Actions */}
-      {hovered && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}
-        >
-          <button className="btn-icon" onClick={onEdit} title="Edit"><Pencil size={12} /></button>
-          <button className="btn-icon" onClick={onAI}   title="AI actions (uses JD if attached)"><Sparkles size={12} style={{ color: '#a855f7' }} /></button>
-          <button className="btn-icon" onClick={onDelete} title="Delete" style={{ color: 'var(--color-danger)' }}><Trash2 size={12} /></button>
-        </motion.div>
-      )}
+      {/* Actions — hidden on desktop until hover, always visible on mobile */}
+      <div className="kcard-actions" style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}>
+        <button className="btn-icon" onClick={onEdit} title="Edit"><Pencil size={12} /></button>
+        <button className="btn-icon" onClick={onAI}   title="AI actions (uses JD if attached)"><Sparkles size={12} style={{ color: '#a855f7' }} /></button>
+        <button className="btn-icon" onClick={onDelete} title="Delete" style={{ color: 'var(--color-danger)' }}><Trash2 size={12} /></button>
+      </div>
     </motion.div>
   );
 }

@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { COLOR_THEMES, FONT_OPTIONS, LAYOUT_OPTIONS } from '../../lib/constants';
+import { saveTheme, loadThemeMeta } from '../../lib/theme';
 
 type Tab = 'colors' | 'styles' | 'image' | 'font' | 'layout';
 
 const STYLES = [
-  { id: 'default', label: 'Default', desc: 'Glass + Gradient', preview: { bg: '#0f1117', accent: '#7c3aed' } },
-  { id: 'classic', label: 'Classic', desc: 'Clean + Professional', preview: { bg: '#f8fafc', accent: '#2563eb' } },
+  { id: 'default', label: 'Default', desc: 'Deep Space + Indigo', preview: { bg: '#04080f', accent: '#6366f1' } },
+  { id: 'classic', label: 'Classic', desc: 'Clean + Professional', preview: { bg: '#f8fafc', accent: '#6366f1' } },
   { id: 'neon',    label: 'Neon',    desc: 'Cyber + Glow', preview: { bg: '#030712', accent: '#00ff88' }, warning: true },
   { id: 'retro',   label: 'Retro',   desc: 'Terminal + Pixel', preview: { bg: '#001100', accent: '#00ff00' }, warning: true },
   { id: 'cartoon', label: 'Cartoon', desc: 'Bold + Comic', preview: { bg: '#fef3c7', accent: '#7c3aed' } },
@@ -20,10 +21,11 @@ export function ThemeStudio() {
   const addToast = useStore((s) => s.addToast);
 
   const [tab, setTab]         = useState<Tab>('colors');
-  const [activeColor, setActiveColor] = useState('default');
-  const [activeStyle, setActiveStyle] = useState('default');
-  const [activeFont,  setActiveFont]  = useState('inter');
-  const [activeLayout, setActiveLayout] = useState('comfortable');
+  const saved = loadThemeMeta();
+  const [activeColor,  setActiveColor]  = useState(saved?.colorId  || 'default');
+  const [activeStyle,  setActiveStyle]  = useState(saved?.styleId  || 'default');
+  const [activeFont,   setActiveFont]   = useState(saved?.fontId   || 'inter');
+  const [activeLayout, setActiveLayout] = useState(saved?.layoutId || 'comfortable');
   const [bgUrl,    setBgUrl]    = useState('');
   const [bgOpacity, setBgOpacity] = useState(80);
   const [bgBlur,   setBgBlur]   = useState(4);
@@ -32,7 +34,11 @@ export function ThemeStudio() {
     document.documentElement.style.setProperty('--grad-start', theme.start);
     document.documentElement.style.setProperty('--grad-end',   theme.end);
     document.documentElement.style.setProperty('--color-accent', theme.start);
+    const isLight = getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim().startsWith('#f');
+    document.documentElement.style.setProperty('--color-muted',    isLight ? '#94a3b8' : '#64748b');
+    document.documentElement.style.setProperty('--color-text-dim', isLight ? '#475569' : '#94a3b8');
     setActiveColor(theme.id);
+    saveTheme({ colorId: theme.id, styleId: activeStyle, fontId: activeFont, layoutId: activeLayout });
     addToast(`Theme: ${theme.label}`, 'info');
   };
 
@@ -41,19 +47,45 @@ export function ThemeStudio() {
     document.documentElement.setAttribute('data-style', id);
 
     const vars: Record<string, Record<string, string>> = {
-      default: { '--color-bg': '#0f1117', '--color-surface': '#1a1d27', '--color-surface-2': '#22263a', '--color-border': '#2e3347', '--color-text': '#e2e8f0' },
-      classic: { '--color-bg': '#f8fafc', '--color-surface': '#ffffff', '--color-surface-2': '#f1f5f9', '--color-border': '#e2e8f0', '--color-text': '#1e293b' },
-      neon:    { '--color-bg': '#030712', '--color-surface': '#050d16', '--color-surface-2': '#0a1628', '--color-border': '#00ff8833', '--color-text': '#00ff88', '--color-accent': '#00ff88', '--grad-start': '#00ff88', '--grad-end': '#0088ff' },
-      retro:   { '--color-bg': '#001100', '--color-surface': '#001a00', '--color-surface-2': '#002200', '--color-border': '#00440033', '--color-text': '#00ff00', '--color-accent': '#00ff00', '--grad-start': '#00ff00', '--grad-end': '#00aa00', '--font-sans': 'monospace' },
-      cartoon: { '--color-bg': '#fffbeb', '--color-surface': '#ffffff', '--color-surface-2': '#fef3c7', '--color-border': '#000', '--color-text': '#1c1917', '--color-accent': '#7c3aed' },
+      default: {
+        '--color-bg': '#04080f', '--color-surface': '#080f1e', '--color-surface-2': '#0d1728',
+        '--color-border': '#172438', '--color-text': '#e8f4ff', '--color-text-dim': '#7aadcc',
+        '--color-muted': '#4a6582',
+        '--color-accent': '#38bdf8', '--grad-start': '#6366f1', '--grad-end': '#06b6d4',
+      },
+      classic: {
+        '--color-bg': '#f8fafc', '--color-surface': '#ffffff', '--color-surface-2': '#f1f5f9',
+        '--color-border': '#e2e8f0', '--color-text': '#1e293b', '--color-text-dim': '#475569',
+        '--color-muted': '#94a3b8',
+      },
+      neon: {
+        '--color-bg': '#030712', '--color-surface': '#050d16', '--color-surface-2': '#0a1628',
+        '--color-border': '#00ff8833', '--color-text': '#00ff88', '--color-text-dim': '#00cc66',
+        '--color-muted': '#007744',
+        '--color-accent': '#00ff88', '--grad-start': '#00ff88', '--grad-end': '#0088ff',
+      },
+      retro: {
+        '--color-bg': '#001100', '--color-surface': '#001a00', '--color-surface-2': '#002200',
+        '--color-border': '#00440033', '--color-text': '#00ff00', '--color-text-dim': '#00cc00',
+        '--color-muted': '#006600',
+        '--color-accent': '#00ff00', '--grad-start': '#00ff00', '--grad-end': '#00aa00',
+        '--font-sans': 'monospace',
+      },
+      cartoon: {
+        '--color-bg': '#fffbeb', '--color-surface': '#ffffff', '--color-surface-2': '#fef3c7',
+        '--color-border': '#000', '--color-text': '#1c1917', '--color-text-dim': '#44403c',
+        '--color-muted': '#78716c',
+        '--color-accent': '#7c3aed',
+      },
     };
     const v = vars[id] || vars.default;
     Object.entries(v).forEach(([k, val]) => document.documentElement.style.setProperty(k, val));
     setActiveStyle(id);
+    saveTheme({ colorId: activeColor, styleId: id, fontId: activeFont, layoutId: activeLayout });
     addToast(`Style: ${id}`, 'info');
   };
 
-  const applyFont = (fontValue: string) => {
+  const applyFont = (fontId: string, fontValue: string) => {
     document.documentElement.style.setProperty('--font-sans', fontValue);
     if (!fontValue.startsWith('system') && !fontValue.startsWith('monospace')) {
       const name = fontValue.split(',')[0].replace(/'/g, '').trim();
@@ -62,27 +94,35 @@ export function ThemeStudio() {
       link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}:wght@400;500;600;700&display=swap`;
       document.head.appendChild(link);
     }
+    setActiveFont(fontId);
+    saveTheme({ colorId: activeColor, styleId: activeStyle, fontId, layoutId: activeLayout });
     addToast(`Font updated`, 'info');
   };
 
   const applyBg = () => {
     if (!bgUrl.trim()) return;
     document.documentElement.style.setProperty('--bg-image', `url('${bgUrl}')`);
-    document.body.style.backgroundImage = `url('${bgUrl}')`;
-    document.body.style.backgroundSize  = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundAttachment = 'fixed';
-    document.querySelectorAll<HTMLElement>('.card,.modal,.ai-panel,.kcol,header,aside').forEach((el) => {
-      el.style.backdropFilter = `blur(${bgBlur}px)`;
-      el.style.opacity = String(bgOpacity / 100);
+    // Target the app root div — body is covered by the root <div> with background: var(--color-bg)
+    const appRoot = document.querySelector<HTMLElement>('#root > div');
+    const target = appRoot ?? document.body;
+    target.style.backgroundImage    = `url('${bgUrl}')`;
+    target.style.backgroundSize     = 'cover';
+    target.style.backgroundPosition = 'center';
+    target.style.backgroundRepeat   = 'no-repeat';
+    // Mark root so CSS can make content areas opaque against the background image
+    document.documentElement.classList.add('has-bg-image');
+    // Optional blur on glass surfaces
+    const blur = bgBlur > 0 ? `blur(${bgBlur}px)` : '';
+    document.querySelectorAll<HTMLElement>('.card,.kcol').forEach((el) => {
+      el.style.backdropFilter = blur;
     });
     addToast('Background applied', 'success');
   };
 
-  const applyLayout = (pad: string) => {
-    document.querySelectorAll<HTMLElement>('.tbl td,.tbl th').forEach((el) => {
-      el.style.padding = pad;
-    });
+  const applyLayout = (layoutId: string, pad: string) => {
+    document.documentElement.style.setProperty('--tbl-cell-pad', pad);
+    setActiveLayout(layoutId);
+    saveTheme({ colorId: activeColor, styleId: activeStyle, fontId: activeFont, layoutId });
     addToast('Layout updated', 'info');
   };
 
@@ -118,7 +158,7 @@ export function ThemeStudio() {
           </div>
 
           {/* Tab bar */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', padding: '0 20px' }}>
+          <div className="ts-tabbar" style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', padding: '0 20px' }}>
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -144,7 +184,7 @@ export function ThemeStudio() {
           <div className="modal-body">
             {/* Colors */}
             {tab === 'colors' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div className="ts-colors-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {COLOR_THEMES.map((theme) => (
                   <div
                     key={theme.id}
@@ -166,7 +206,7 @@ export function ThemeStudio() {
 
             {/* Styles */}
             {tab === 'styles' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="ts-styles-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {STYLES.map((s) => (
                   <div key={s.id} className={`theme-card ${activeStyle === s.id ? 'selected' : ''}`} onClick={() => applyStyle(s.id)}>
                     <div style={{ height: 48, borderRadius: 6, background: s.preview.bg, border: `2px solid ${s.preview.accent}`, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
@@ -214,7 +254,7 @@ export function ThemeStudio() {
                     key={f.id}
                     className={`theme-card ${activeFont === f.id ? 'selected' : ''}`}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}
-                    onClick={() => { setActiveFont(f.id); applyFont(f.value); }}
+                    onClick={() => applyFont(f.id, f.value)}
                   >
                     <div>
                       <div style={{ fontFamily: f.value, fontSize: 16, color: 'var(--color-text)', fontWeight: 500 }}>Aa</div>
@@ -234,7 +274,7 @@ export function ThemeStudio() {
                     key={l.id}
                     className={`theme-card ${activeLayout === l.id ? 'selected' : ''}`}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', cursor: 'pointer' }}
-                    onClick={() => { setActiveLayout(l.id); applyLayout(l.pad); }}
+                    onClick={() => applyLayout(l.id, l.pad)}
                   >
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text)' }}>{l.label}</div>

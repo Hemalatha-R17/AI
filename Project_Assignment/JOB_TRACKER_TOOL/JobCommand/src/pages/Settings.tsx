@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Save, Download, Upload, Trash2, KeyRound, Eye, EyeOff, Bell, BellOff, Mail, Send } from 'lucide-react';
+import { Save, Download, Upload, Trash2, KeyRound, Eye, EyeOff, Bell, BellOff, Mail, Send, Printer } from 'lucide-react';
 import { useStore, useProfile } from '../store/useStore';
 import { AI_PROVIDERS, CURRENCIES } from '../lib/constants';
 import { dbGetSetting, dbSetSetting } from '../lib/db';
 import { requestBrowserPermission, sendTestNotification, DEFAULT_NOTIF } from '../lib/notifications';
 import type { NotifSettings } from '../lib/notifications';
 import type { AIProvider, Currency } from '../types';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 export function Settings() {
   const profile         = useProfile();
@@ -19,7 +20,7 @@ export function Settings() {
   const activeProviders = useStore((s) => s.activeProviders);
   const addToast        = useStore((s) => s.addToast);
 
-  const [csvPreview, setCsvPreview] = useState<{ text: string; rows: { company: string; role: string; status: string }[] } | null>(null);
+  const [csvPreview, setCsvPreview] = useState<{ text: string; rows: { company: string; role: string; status: string; statusWarn?: boolean }[]; error?: string } | null>(null);
   const [csvImporting, setCsvImporting] = useState(false);
 
   const [goal, setGoal]         = useState(String(profile.monthlyGoal));
@@ -112,15 +113,36 @@ export function Settings() {
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       const lines = text.split(/\r?\n/).filter((l) => l.trim());
-      const headers = lines[0]?.split(',').map((h) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || [];
+      const VALID_STATUSES = ['Saved','Submitted','Phone Screen','Interview','Offer','Accepted','Rejected','Withdrawn'];
+      const parseRow = (line: string) => {
+        const result: string[] = [];
+        let cur = '', inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+          else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        result.push(cur.trim());
+        return result;
+      };
+      const headers = parseRow(lines[0]).map((h) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const col = (keys: string[]) => { for (const k of keys) { const i = headers.findIndex((h) => h.includes(k)); if (i >= 0) return i; } return -1; };
-      const ci = col(['company']), ri = col(['role','title','position']), si = col(['status']);
+      const ci = col(['company']), ri = col(['role','title','position','jobtitle']), si = col(['status']);
+      if (ci < 0 || ri < 0) {
+        const missing = [ci < 0 && 'Company', ri < 0 && 'Role / Title'].filter(Boolean).join(' and ');
+        setCsvPreview({ text, rows: [], error: `Could not find ${missing} column — check CSV headers` });
+        return;
+      }
       const rows = lines.slice(1, 6).map((line) => {
-        const cells = line.split(',');
+        const cells = parseRow(line);
+        const rawStatus = si >= 0 ? (cells[si] || '').replace(/^"|"$/g, '').trim() : '';
+        const status = VALID_STATUSES.find((s) => s.toLowerCase() === rawStatus.toLowerCase()) || 'Saved';
         return {
-          company: (cells[ci] || '').replace(/"/g, '').trim(),
-          role:    (cells[ri] || '').replace(/"/g, '').trim(),
-          status:  (cells[si] || '').replace(/"/g, '').trim() || 'Saved',
+          company: (cells[ci] || '').replace(/^"|"$/g, '').trim(),
+          role:    (cells[ri] || '').replace(/^"|"$/g, '').trim(),
+          status,
+          statusWarn: !!rawStatus && !VALID_STATUSES.find((s) => s.toLowerCase() === rawStatus.toLowerCase()),
         };
       }).filter((r) => r.company && r.role);
       setCsvPreview({ text, rows });
@@ -144,7 +166,7 @@ export function Settings() {
 
   return (
     <div style={{ padding: 24, flex: 1, overflow: 'auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
+      <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
 
         {/* Tracker Parameters */}
         <div className="card">
@@ -155,9 +177,12 @@ export function Settings() {
           </div>
           <div className="form-group">
             <label>Default Currency</label>
-            <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
-              {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
-            </select>
+            <CustomSelect
+              value={currency}
+              onChange={(v) => setCurrency(v as Currency)}
+              options={CURRENCIES}
+              placeholder="Currency…"
+            />
           </div>
           <button className="btn btn-primary" onClick={saveSettings}>
             <Save size={13} /> Save Settings
@@ -174,6 +199,9 @@ export function Settings() {
             <button className="btn btn-ghost" onClick={exportData}>
               <Download size={13} /> Export Full Backup (.json)
             </button>
+            <button className="btn btn-ghost" onClick={() => window.print()}>
+              <Printer size={13} /> Print / Save as PDF
+            </button>
             <label style={{ cursor: 'pointer', textTransform: 'none', fontSize: 13, marginBottom: 0 }}>
               <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
               <div className="btn btn-ghost" style={{ display: 'inline-flex', width: '100%', justifyContent: 'center' }}>
@@ -187,34 +215,50 @@ export function Settings() {
               </div>
             </label>
             {csvPreview && (
-              <div style={{ marginTop: 4, padding: '12px 14px', background: 'var(--color-surface-2)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>
-                  Preview (first {csvPreview.rows.length} rows):
-                </div>
-                <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse', marginBottom: 10 }}>
-                  <thead>
-                    <tr>
-                      {['Company','Role','Status'].map((h) => (
-                        <th key={h} style={{ textAlign: 'left', padding: '2px 6px', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: 9 }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {csvPreview.rows.map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ padding: '3px 6px', color: 'var(--color-text)' }}>{r.company}</td>
-                        <td style={{ padding: '3px 6px', color: 'var(--color-text-dim)' }}>{r.role}</td>
-                        <td style={{ padding: '3px 6px', color: 'var(--color-muted)' }}>{r.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ marginTop: 4, padding: '12px 14px', background: 'var(--color-surface-2)', borderRadius: 8, border: `1px solid ${csvPreview.error ? 'rgba(239,68,68,0.4)' : 'var(--color-border)'}` }}>
+                {csvPreview.error ? (
+                  <div style={{ fontSize: 12, color: 'var(--color-danger)', marginBottom: 8 }}>⚠ {csvPreview.error}</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>
+                      Preview (first {csvPreview.rows.length} rows):
+                    </div>
+                    <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse', marginBottom: 10 }}>
+                      <thead>
+                        <tr>
+                          {['Company','Role','Status'].map((h) => (
+                            <th key={h} style={{ textAlign: 'left', padding: '2px 6px', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: 9 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvPreview.rows.map((r, i) => (
+                          <tr key={i}>
+                            <td style={{ padding: '3px 6px', color: 'var(--color-text)' }}>{r.company}</td>
+                            <td style={{ padding: '3px 6px', color: 'var(--color-text-dim)' }}>{r.role}</td>
+                            <td style={{ padding: '3px 6px', color: r.statusWarn ? 'var(--color-warning, #f59e0b)' : 'var(--color-muted)' }}
+                              title={r.statusWarn ? 'Unrecognized status — will be set to "Saved"' : undefined}>
+                              {r.status}{r.statusWarn ? ' ⚠' : ''}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {csvPreview.rows.some((r) => r.statusWarn) && (
+                      <div style={{ fontSize: 10, color: 'var(--color-muted)', marginBottom: 8 }}>
+                        ⚠ Unrecognized status values will be imported as "Saved"
+                      </div>
+                    )}
+                  </>
+                )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 12px' }} onClick={confirmCSVImport} disabled={csvImporting}>
-                    {csvImporting ? 'Importing…' : 'Confirm Import'}
-                  </button>
+                  {!csvPreview.error && (
+                    <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 12px' }} onClick={confirmCSVImport} disabled={csvImporting}>
+                      {csvImporting ? 'Importing…' : 'Confirm Import'}
+                    </button>
+                  )}
                   <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => setCsvPreview(null)}>
-                    Cancel
+                    {csvPreview.error ? 'Dismiss' : 'Cancel'}
                   </button>
                 </div>
               </div>
@@ -241,7 +285,7 @@ export function Settings() {
             Get alerted for follow-ups, interviews, and offers — via browser pop-up and/or email.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="notif-panels-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
             {/* Browser notifications */}
             <div style={{ padding: '14px 16px', background: 'var(--color-surface-2)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
@@ -286,7 +330,7 @@ export function Settings() {
                   type="email"
                   value={notif.email}
                   onChange={(e) => setN('email', e.target.value)}
-                  placeholder="hemalathar212@gmail.com"
+                  placeholder="abc@gmail.com"
                   style={{ fontSize: 12 }}
                 />
               </div>
@@ -337,7 +381,7 @@ export function Settings() {
           {/* Alert types */}
           <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--color-surface-2)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', marginBottom: 12 }}>Alert Types</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div className="alert-types-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               {[
                 { key: 'alertFollowUp',  label: '📌 Follow-up Reminders', desc: 'Due & overdue follow-ups' },
                 { key: 'alertInterview', label: '🎯 Interview Alerts',     desc: 'Today & tomorrow interviews' },
@@ -410,13 +454,13 @@ export function Settings() {
                       {showKeys[p.id] ? <EyeOff size={12} /> : <Eye size={12} />}
                     </button>
                   </div>
-                  <select
+                  <CustomSelect
                     value={selectedModels[p.id] || p.model}
-                    onChange={(e) => setSelectedModels((m) => ({ ...m, [p.id]: e.target.value }))}
-                    style={{ marginTop: 6, marginBottom: 8, fontSize: 11, padding: '3px 6px', width: '100%' }}
-                  >
-                    {p.models.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                    onChange={(v) => setSelectedModels((m) => ({ ...m, [p.id]: v }))}
+                    options={p.models}
+                    placeholder="Model…"
+                    style={{ marginTop: 6, marginBottom: 8, fontSize: 11, width: '100%' }}
+                  />
                   <button
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '6px', fontSize: 12 }}

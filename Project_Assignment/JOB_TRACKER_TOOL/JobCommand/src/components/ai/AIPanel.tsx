@@ -4,6 +4,7 @@ import { X, Send, Sparkles, Loader } from 'lucide-react';
 import { useStore, useJobs } from '../../store/useStore';
 import { AI_PROVIDERS } from '../../lib/constants';
 import { callAI } from '../../lib/ai';
+import { CustomSelect } from '../ui/CustomSelect';
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
@@ -113,13 +114,13 @@ export function AIPanel() {
 
           {/* Provider selector */}
           {connectedProviders.length > 0 && (
-            <select
+            <CustomSelect
               value={selectedProvider}
-              onChange={(e) => setSelectedProvider(e.target.value)}
-              style={{ width: 'auto', padding: '3px 6px', fontSize: 11, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)' }}
-            >
-              {connectedProviders.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
+              onChange={setSelectedProvider}
+              options={connectedProviders.map((p) => ({ value: p.id, label: p.label }))}
+              placeholder="Provider…"
+              style={{ minWidth: 120, fontSize: 11 }}
+            />
           )}
 
           <button className="btn-icon" onClick={() => setOpen(false)}><X size={15} /></button>
