@@ -1,6 +1,6 @@
 # AI-Assisted QA Testing Course
 
-A learning repository for an AI-assisted QA testing course. It tracks coursework across three chapters and includes prompt engineering artifacts, reusable prompt templates, and working test automation frameworks.
+A learning repository for an AI-assisted QA testing course. It tracks coursework across four chapters and includes prompt engineering artifacts, reusable prompt templates, working test automation frameworks, and AI agent workflows.
 
 ---
 
@@ -34,6 +34,11 @@ A learning repository for an AI-assisted QA testing course. It tracks coursework
 │       ├── architecture/           — SOPs: CRUD, Kanban, persistence, search
 │       ├── B.L.A.S.T.md           — B.L.A.S.T build protocol for this project
 │       └── findings.md             — Research & design findings
+├── chapter_04_AI_Agents_n8n/       — AI Agents & n8n automation chapter
+│   ├── n8n_AIAgent/                — n8n workflow JSONs (QA Buddy, JIRA Agent, PRD→TestCase)
+│   ├── skillfile_content_generation/ — Content generation skill + outputs
+│   └── social_ai_agent/contentforge/ — Next.js social content pipeline app
+├── LangFlow/                       — LangFlow local installation & quick-start reference
 ├── VWO_Login_Dashboard_Test_Plan.md
 └── RESTFUL_TEST_PLAN.md
 ```
@@ -314,6 +319,75 @@ start playwright-report/index.html
 **File:** `Project_Assignment/JOB_TRACKER_TOOL/Improvements/TEST_CHECKLIST.md`
 
 130+ manual test checkpoints across 20 sections including seed data verification, real-time offer notification, bulk actions, cover letter save flow, and cross-feature checks. Includes Bug Log and Test Summary tables.
+
+---
+
+## Chapter 4 — AI Agents & n8n
+
+**Location:** `chapter_04_AI_Agents_n8n/`
+
+### n8n Workflow Agents
+
+**Location:** `chapter_04_AI_Agents_n8n/n8n_AIAgent/`
+
+Four ready-to-import n8n workflow JSONs:
+
+| File | Description |
+|------|-------------|
+| `AI_3X_01_QA_Buddy.json` | Conversational QA assistant agent |
+| `AI_3X_02_JIRA_Agent.json` | JIRA-integrated AI agent |
+| `AI_3X_03_Read_PRD_TestCases_Excel.json` | PRD → test cases → Excel pipeline |
+| `AI_3X_04_Read_PRD_TestCases_Excel_v2.json` | Enhanced v2 of the PRD pipeline |
+
+### Content Generation Skill
+
+**Location:** `chapter_04_AI_Agents_n8n/skillfile_content_generation/`
+
+A SKILL.md-driven content pipeline that generates LinkedIn posts, Medium articles, YouTube scripts, Instagram carousels, and image prompts from a single topic input. Sample outputs are in `output/2026-06-14/`.
+
+### ContentForge — Social AI Agent App
+
+**Location:** `chapter_04_AI_Agents_n8n/social_ai_agent/contentforge/`
+
+A Next.js application that automates social media content creation and scheduling.
+
+**Stack:** Next.js, TypeScript, Tailwind CSS
+
+**Features:**
+- Scheduler — automated content pipeline runs on a cron schedule
+- Calendar UI — visual content calendar showing planned and published posts
+- Excel log — tracks content status and metadata in a spreadsheet
+- API routes — `/api/run`, `/api/status`, `/api/calendar`, `/api/today`, `/api/download`, `/api/log`
+
+```bash
+cd chapter_04_AI_Agents_n8n/social_ai_agent/contentforge
+npm install
+npm run dev          # http://localhost:3000
+npm run build
+```
+
+Copy `.env.example` to `.env.local` and fill in your API keys before running.
+
+---
+
+## LangFlow — Local Installation
+
+**Location:** `LangFlow/`
+
+A locally installed LangFlow instance for building visual AI agent workflows.
+
+| Item | Value |
+|------|-------|
+| Python | 3.13 |
+| Installer | `uv` |
+| URL | `http://localhost:7860` |
+
+```powershell
+# Start LangFlow (from the LangFlow/ folder)
+.venv\Scripts\langflow.exe run
+```
+
+See `LangFlow/README.md` for full setup, stop, and reinstall instructions.
 
 ---
 
