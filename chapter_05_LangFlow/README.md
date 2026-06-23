@@ -13,7 +13,7 @@
 
 ## Start LangFlow
 
-Open PowerShell inside the `LangFlow` folder and run:
+Open PowerShell inside the `chapter_05_LangFlow` folder and run:
 
 ```powershell
 .venv\Scripts\langflow.exe run
@@ -22,7 +22,7 @@ Open PowerShell inside the `LangFlow` folder and run:
 Or using the full path from anywhere:
 
 ```powershell
-C:\Users\Hema Rajanna\Desktop\AI\LangFlow\.venv\Scripts\langflow.exe run
+C:\Users\Hema Rajanna\Desktop\AI\chapter_05_LangFlow\.venv\Scripts\langflow.exe run
 ```
 
 Wait for this message in the terminal:
@@ -45,7 +45,7 @@ Press `Ctrl + C` in the terminal where LangFlow is running.
 ## Reinstall (if venv is broken)
 
 ```powershell
-# From C:\Users\Hema Rajanna\Desktop\AI\LangFlow\
+# From C:\Users\Hema Rajanna\Desktop\AI\chapter_05_LangFlow\
 Remove-Item -Recurse -Force .venv
 uv venv .venv --python 3.13
 uv pip install langflow --python .venv\Scripts\python.exe

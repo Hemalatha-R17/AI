@@ -1,6 +1,6 @@
 # AI-Assisted QA Testing Course
 
-A learning repository for an AI-assisted QA testing course. It tracks coursework across four chapters and includes prompt engineering artifacts, reusable prompt templates, working test automation frameworks, and AI agent workflows.
+A learning repository for an AI-assisted QA testing course. It tracks coursework across five chapters and includes prompt engineering artifacts, reusable prompt templates, working test automation frameworks, and AI agent workflows.
 
 ---
 
@@ -38,7 +38,7 @@ A learning repository for an AI-assisted QA testing course. It tracks coursework
 │   ├── n8n_AIAgent/                — n8n workflow JSONs (QA Buddy, JIRA Agent, PRD→TestCase)
 │   ├── skillfile_content_generation/ — Content generation skill + outputs
 │   └── social_ai_agent/contentforge/ — Next.js social content pipeline app
-├── LangFlow/                       — LangFlow local installation & quick-start reference
+├── chapter_05_LangFlow/            — LangFlow local installation & quick-start reference
 ├── VWO_Login_Dashboard_Test_Plan.md
 └── RESTFUL_TEST_PLAN.md
 ```
@@ -370,24 +370,25 @@ Copy `.env.example` to `.env.local` and fill in your API keys before running.
 
 ---
 
-## LangFlow — Local Installation
+## Chapter 5 — LangFlow
 
-**Location:** `LangFlow/`
+**Location:** `chapter_05_LangFlow/`
 
 A locally installed LangFlow instance for building visual AI agent workflows.
 
 | Item | Value |
 |------|-------|
 | Python | 3.13 |
-| Installer | `uv` |
+| Installer | `uv` (fast package manager) |
+| Virtual Env | `.venv\` |
 | URL | `http://localhost:7860` |
 
 ```powershell
-# Start LangFlow (from the LangFlow/ folder)
+# Start LangFlow (from the chapter_05_LangFlow/ folder)
 .venv\Scripts\langflow.exe run
 ```
 
-See `LangFlow/README.md` for full setup, stop, and reinstall instructions.
+See `chapter_05_LangFlow/README.md` for full setup, stop, and reinstall instructions.
 
 ---
 
