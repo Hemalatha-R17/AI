@@ -1,6 +1,6 @@
 # AI-Assisted QA Testing Course
 
-A learning repository for an AI-assisted QA testing course. It tracks coursework across five chapters and includes prompt engineering artifacts, reusable prompt templates, working test automation frameworks, and AI agent workflows.
+A learning repository for an AI-assisted QA testing course. It tracks coursework across six chapters and includes prompt engineering artifacts, reusable prompt templates, working test automation frameworks, AI agent workflows, and a RAG (Retrieval-Augmented Generation) pipeline explorer.
 
 ---
 
@@ -39,6 +39,12 @@ A learning repository for an AI-assisted QA testing course. It tracks coursework
 │   ├── skillfile_content_generation/ — Content generation skill + outputs
 │   └── social_ai_agent/contentforge/ — Next.js social content pipeline app
 ├── chapter_05_LangFlow/            — LangFlow local installation & quick-start reference
+├── Chapter_07_RAG/                 — RAG Explorer chapter
+│   └── BASIC_RAG/                  — FastAPI + React RAG pipeline visualizer
+│       ├── backend/                — FastAPI app (ingestion, retrieval, Groq answer generation)
+│       ├── frontend/                — React + Vite UI
+│       ├── data/data/               — sample/uploaded source documents
+│       └── docs/screenshots/        — README screenshots
 ├── VWO_Login_Dashboard_Test_Plan.md
 └── RESTFUL_TEST_PLAN.md
 ```
@@ -389,6 +395,59 @@ A locally installed LangFlow instance for building visual AI agent workflows.
 ```
 
 See `chapter_05_LangFlow/README.md` for full setup, stop, and reinstall instructions.
+
+---
+
+## Chapter 7 — RAG Explorer
+
+**Location:** `Chapter_07_RAG/BASIC_RAG/`
+
+A transparent, end-to-end RAG (Retrieval-Augmented Generation) pipeline with a
+React UI that visualizes every stage — ingestion, chunking, embedding, vector
+storage, retrieval, and answer generation — over any PDF, CSV, TXT, or JSON
+file you upload.
+
+**Stack:** FastAPI (Python 3.12), ChromaDB (local vector store),
+`sentence-transformers` (`nomic-ai/nomic-embed-text-v1.5`), Groq
+(`openai/gpt-oss-120b`) · React + Vite + Framer Motion
+
+### Features
+
+- **Multi-document support** — ingest several documents and keep them side by
+  side; switch which one is active, retrieval/answering always scoped to it
+- **Real ingestion progress** — NDJSON-streamed pipeline steps (parse →
+  chunk → embed → store), not a simulated log
+- **Streaming answers** — token-by-token generation with inline, clickable
+  chunk citations that jump to the source chunk
+- **Grounded / not-found badge** — flags whether the answer actually came
+  from the retrieved chunks
+- **Similarity drop-off chart** — visualizes the top-k cutoff against a
+  wider retrieval candidate pool
+- **Prompt inspection** — "View prompt" shows the exact messages sent to
+  Groq, with estimated token counts
+- **Session metrics** — running totals for queries asked, latency,
+  similarity, and tokens across the session
+- Export answers as Markdown/JSON, dark/light/system theme, question
+  history persistence, dynamically generated sample questions per document
+
+### Running Locally
+
+```bash
+# Backend (Python 3.12 required)
+cd Chapter_07_RAG/BASIC_RAG/backend
+py -3.12 -m venv venv
+./venv/Scripts/pip install -r requirements.txt
+copy .env.example .env   # then set GROQ_API_KEY
+./venv/Scripts/uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd Chapter_07_RAG/BASIC_RAG/frontend
+npm install
+npm run dev          # http://localhost:5173
+```
+
+See `Chapter_07_RAG/BASIC_RAG/README.md` for full setup instructions,
+screenshots, and the API reference.
 
 ---
 

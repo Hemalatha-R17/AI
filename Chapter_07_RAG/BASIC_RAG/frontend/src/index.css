@@ -1,0 +1,236 @@
+:root {
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --text: #52514e;
+  --text-h: #0b0b0b;
+  --text-muted: #898781;
+  --border: #e1e0d9;
+  --border-strong: rgba(11, 11, 11, 0.1);
+
+  --accent: #4f46e5;
+  --accent-strong: #3730a3;
+  --accent-wash: rgba(79, 70, 229, 0.08);
+  --accent-wash-strong: rgba(79, 70, 229, 0.14);
+  --accent-track: #ded9fb;
+  --accent-contrast: #ffffff;
+
+  /* Per-stage identity colors */
+  --stage-1: #4f46e5; /* indigo — ingest */
+  --stage-1-wash: rgba(79, 70, 229, 0.1);
+  --stage-2: #9333ea; /* violet — ask */
+  --stage-2-wash: rgba(147, 51, 234, 0.1);
+  --stage-3: #db2777; /* pink — retrieve */
+  --stage-3-wash: rgba(219, 39, 119, 0.1);
+  --stage-4: #ea580c; /* amber/orange — generate */
+  --stage-4-wash: rgba(234, 88, 12, 0.1);
+
+  --gradient-flow: linear-gradient(90deg, #4f46e5, #9333ea, #db2777, #ea580c);
+
+  --good: #0ca30c;
+  --good-wash: rgba(12, 163, 12, 0.1);
+
+  --warn: #b45309;
+  --warn-wash: rgba(180, 83, 9, 0.08);
+
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.05);
+  --shadow-lg: 0 4px 12px rgba(11, 11, 11, 0.06), 0 16px 40px rgba(11, 11, 11, 0.08);
+
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.9);
+
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 16px/1.5 var(--sans);
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0a0a0d;
+    --surface: #18181d;
+    --surface-raised: #1f1f26;
+    --text: #c3c2c9;
+    --text-h: #ffffff;
+    --text-muted: #8b8a92;
+    --border: #2c2c34;
+    --border-strong: rgba(255, 255, 255, 0.12);
+
+    --accent: #818cf8;
+    --accent-strong: #a5b4fc;
+    --accent-wash: rgba(129, 140, 248, 0.16);
+    --accent-wash-strong: rgba(129, 140, 248, 0.24);
+    --accent-track: #363168;
+    --accent-contrast: #0a0a0d;
+
+    --stage-1: #818cf8;
+    --stage-1-wash: rgba(129, 140, 248, 0.16);
+    --stage-2: #c084fc;
+    --stage-2-wash: rgba(192, 132, 252, 0.16);
+    --stage-3: #f472b6;
+    --stage-3-wash: rgba(244, 114, 182, 0.16);
+    --stage-4: #fb923c;
+    --stage-4-wash: rgba(251, 146, 60, 0.16);
+
+    --gradient-flow: linear-gradient(90deg, #818cf8, #c084fc, #f472b6, #fb923c);
+
+    --good: #22c55e;
+    --good-wash: rgba(34, 197, 94, 0.18);
+
+    --warn: #fbbf24;
+    --warn-wash: rgba(251, 191, 36, 0.16);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5);
+
+    --glass-bg: rgba(24, 24, 29, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Manual theme override (wins over prefers-color-scheme either direction) */
+
+:root[data-theme="light"] {
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --text: #52514e;
+  --text-h: #0b0b0b;
+  --text-muted: #898781;
+  --border: #e1e0d9;
+  --border-strong: rgba(11, 11, 11, 0.1);
+
+  --accent: #4f46e5;
+  --accent-strong: #3730a3;
+  --accent-wash: rgba(79, 70, 229, 0.08);
+  --accent-wash-strong: rgba(79, 70, 229, 0.14);
+  --accent-track: #ded9fb;
+  --accent-contrast: #ffffff;
+
+  --stage-1: #4f46e5;
+  --stage-1-wash: rgba(79, 70, 229, 0.1);
+  --stage-2: #9333ea;
+  --stage-2-wash: rgba(147, 51, 234, 0.1);
+  --stage-3: #db2777;
+  --stage-3-wash: rgba(219, 39, 119, 0.1);
+  --stage-4: #ea580c;
+  --stage-4-wash: rgba(234, 88, 12, 0.1);
+
+  --gradient-flow: linear-gradient(90deg, #4f46e5, #9333ea, #db2777, #ea580c);
+
+  --good: #0ca30c;
+  --good-wash: rgba(12, 163, 12, 0.1);
+
+  --warn: #b45309;
+  --warn-wash: rgba(180, 83, 9, 0.08);
+
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.05);
+  --shadow-lg: 0 4px 12px rgba(11, 11, 11, 0.06), 0 16px 40px rgba(11, 11, 11, 0.08);
+
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.9);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --page: #0a0a0d;
+  --surface: #18181d;
+  --surface-raised: #1f1f26;
+  --text: #c3c2c9;
+  --text-h: #ffffff;
+  --text-muted: #8b8a92;
+  --border: #2c2c34;
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --accent: #818cf8;
+  --accent-strong: #a5b4fc;
+  --accent-wash: rgba(129, 140, 248, 0.16);
+  --accent-wash-strong: rgba(129, 140, 248, 0.24);
+  --accent-track: #363168;
+  --accent-contrast: #0a0a0d;
+
+  --stage-1: #818cf8;
+  --stage-1-wash: rgba(129, 140, 248, 0.16);
+  --stage-2: #c084fc;
+  --stage-2-wash: rgba(192, 132, 252, 0.16);
+  --stage-3: #f472b6;
+  --stage-3-wash: rgba(244, 114, 182, 0.16);
+  --stage-4: #fb923c;
+  --stage-4-wash: rgba(251, 146, 60, 0.16);
+
+  --gradient-flow: linear-gradient(90deg, #818cf8, #c084fc, #f472b6, #fb923c);
+
+  --good: #22c55e;
+  --good-wash: rgba(34, 197, 94, 0.18);
+
+  --warn: #fbbf24;
+  --warn-wash: rgba(251, 191, 36, 0.16);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5);
+
+  --glass-bg: rgba(24, 24, 29, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(560px circle at 12% 8%, var(--stage-1-wash), transparent 60%),
+    radial-gradient(620px circle at 88% 18%, var(--stage-2-wash), transparent 60%),
+    radial-gradient(560px circle at 20% 92%, var(--stage-3-wash), transparent 60%),
+    radial-gradient(620px circle at 90% 96%, var(--stage-4-wash), transparent 60%);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2 {
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

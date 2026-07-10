@@ -1,0 +1,13 @@
+Second Test Document
+
+This is a completely different document about a fictional product called Zephyr Notes,
+a note-taking app for software engineers.
+
+Key features:
+- Markdown editing with live preview
+- Git-based version history for every note
+- Offline-first sync across devices
+- Keyboard-driven command palette
+
+Zephyr Notes targets solo developers and small engineering teams who want their
+notes to live alongside their code.
